@@ -4,6 +4,8 @@ import (
     "cmpId/cmpId"
 )
 
+// Adds the passed Entity to an Entity's EntityList. Used by Game to
+// populate its list.
 type AddEntity struct {
     newEntity Entity
 }
@@ -17,6 +19,7 @@ func (a AddEntity) Act(entStates map[string]State) {
     list.Entities[a.newEntity.Name()] = a.newEntity
 }
 
+// Simple movement.
 type Move struct {
     DirX int
     DirY int
@@ -25,6 +28,7 @@ type Move struct {
 func (a Move) Id() int      { return cmpId.Move }
 func (a Move) Name() string { return "Move" }
 
+// Modifies the Position of an Entity with the passed Move vector.
 func (a Move) Act(entStates map[string]State) {
     // Automatically create a position if it does not exist, keep?
     pos, ok := entStates["Position"].(Position)

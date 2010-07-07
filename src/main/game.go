@@ -5,17 +5,16 @@ import (
     "cmpId/cmpId"
 )
 
+// The core of the game
 type Game struct {
     *CmpData
 }
 
 func (g Game) Id() int      { return cmpId.Game }
 func (g Game) Name() string { return "Game" }
+func NewGame() *Game        { return &Game{NewCmpData()} }
 
-func NewGame() *Game {
-    return &Game{NewCmpData()}
-}
-
+// TODO: Move functionality to an Init Action
 func (g Game) GameLoop() {
     // Initialize stuff
     entities := NewEntityList()

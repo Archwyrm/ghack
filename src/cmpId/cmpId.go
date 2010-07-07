@@ -1,3 +1,5 @@
+// Namespace for component indentification in order to ensure uniqueness
+// in bookkeeping.
 package cmpId
 
 type StateId int
