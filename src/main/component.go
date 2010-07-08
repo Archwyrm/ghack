@@ -19,7 +19,7 @@ type State interface {
 type Action interface {
     Id() int
     Name() string
-    Act(entStates map[string]State)
+    Act(entStates StateList)
 }
 
 // An Entity is a struct composed from various States and Actions, which each
@@ -36,15 +36,20 @@ type Entity interface {
 // TODO: Rename to 'Component'?
 type CmpData struct {
     // Use maps for easy/add remove for now
-    states  map[string]State
-    actions map[string]Action
+    states  StateList
+    actions ActionList
     input   chan CmpMsg
 }
 
+// Simplified declaration
+type StateList map[string]State
+// Simplified declaration
+type ActionList map[string]Action
+
 // Creates a CmpData and initializes its containers.
 func NewCmpData() *CmpData {
-    states := make(map[string]State)
-    actions := make(map[string]Action)
+    states := make(StateList)
+    actions := make(ActionList)
     return &CmpData{states, actions, nil}
 }
 

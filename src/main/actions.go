@@ -14,7 +14,7 @@ func (a AddEntity) Id() int                    { return cmpId.AddEntity }
 func (a AddEntity) Name() string               { return "AddEntity" }
 func NewAddEntity(newEntity Entity) *AddEntity { return &AddEntity{newEntity} }
 
-func (a AddEntity) Act(entStates map[string]State) {
+func (a AddEntity) Act(entStates StateList) {
     list := entStates["EntityList"].(EntityList) // TODO: String literal is problematic
     list.Entities[a.newEntity.Name()] = a.newEntity
 }
@@ -29,7 +29,7 @@ func (a Move) Id() int      { return cmpId.Move }
 func (a Move) Name() string { return "Move" }
 
 // Modifies the Position of an Entity with the passed Move vector.
-func (a Move) Act(entStates map[string]State) {
+func (a Move) Act(entStates StateList) {
     // Automatically create a position if it does not exist, keep?
     pos, ok := entStates["Position"].(Position)
     if !ok {
