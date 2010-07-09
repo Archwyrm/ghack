@@ -14,8 +14,9 @@ func (a AddEntity) Id() int                    { return cmpId.AddEntity }
 func (a AddEntity) Name() string               { return "AddEntity" }
 func NewAddEntity(newEntity Entity) *AddEntity { return &AddEntity{newEntity} }
 
-func (a AddEntity) Act(entStates StateList) {
-    list := entStates["EntityList"].(EntityList) // TODO: String literal is problematic
+func (a AddEntity) Act(ent Entity) {
+    var list EntityList
+    list = ent.GetState(list).(EntityList)
     list.Entities[a.newEntity.Name()] = a.newEntity
 }
 
@@ -29,12 +30,14 @@ func (a Move) Id() int      { return cmpId.Move }
 func (a Move) Name() string { return "Move" }
 
 // Modifies the Position of an Entity with the passed Move vector.
-func (a Move) Act(entStates StateList) {
+func (a Move) Act(ent Entity) {
+    var pos Position
+    var ok bool
     // Automatically create a position if it does not exist, keep?
-    pos, ok := entStates["Position"].(Position)
+    pos, ok = ent.GetState(pos).(Position)
     if !ok {
         pos := Position{0, 0}
-        entStates[pos.Name()] = pos
+        ent.SetState(pos)
     }
     pos.X += a.DirX
     pos.Y += a.DirY
@@ -44,5 +47,5 @@ func (a Move) Act(entStates StateList) {
     // if we are doing this for many entities every frame, pointers may be helpful..
     // Still, the actual state setting should be a message, not direct access so we
     // can run Actions in goroutines
-    entStates["Position"] = pos
+    ent.SetState(pos)
 }

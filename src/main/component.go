@@ -19,17 +19,26 @@ type State interface {
 type Action interface {
     Id() int
     Name() string
-    Act(entStates StateList)
+    Act(ent Entity)
 }
 
 // An Entity is a struct composed from various States and Actions, which each
 // make up its data and functionality respectively.
+//
 // Id() returns a unique ID for each Entity (defined in cmpId package)
 // Name() returns a unique and semi-descriptive name for each Entity (defined
 // by each Entity)
+// GetState() returns the requested State or nil if it does not exist.
+// SetState() sets the value of the passed State within the Entity.
+// AddAction() adds the Action to the Entity.
+// RemoveAction() removes the Action from the Entity.
 type Entity interface {
     Id() int
     Name() string
+    GetState(state State) State
+    SetState(state State)
+    AddAction(action Action)
+    RemoveAction(action Action)
 }
 
 // Contains all the data that each component needs.
@@ -53,23 +62,32 @@ func NewCmpData() *CmpData {
     return &CmpData{states, actions, nil}
 }
 
+// Added to satisfy the Entity interface, clobbered by embedding.
+func (cd CmpData) Id() int { return 0 }
+// Added to satisfy the Entity interface, clobbered by embedding.
+func (cd CmpData) Name() string { return "CmpData" }
+
 // The next functions form the core functionality of a component.
 
 // Returns the requested State. TODO: Take StateId?
-func (cd CmpData) getState(state State) State {
+func (cd CmpData) GetState(state State) State {
     ret := cd.states[state.Name()]
     return ret
 }
 
 // Set the value of the passed State. Replaces any existing State that is the same.
-// TODO: Currently unused
-func (cd CmpData) setState(state State) {
+func (cd CmpData) SetState(state State) {
     cd.states[state.Name()] = state
 }
 
 // Adds to an Entity's actions, causing the Action to be executed on the next tick.
-func (cd CmpData) addAction(action Action) {
+func (cd CmpData) AddAction(action Action) {
     cd.actions[action.Name()] = action
+}
+
+// Removes the Action from an Entity's actions.
+func (cd CmpData) RemoveAction(action Action) {
+    cd.actions[action.Name()] = nil, false
 }
 
 // Main loop which handles all component tasks.
@@ -86,7 +104,7 @@ func (cd CmpData) Run(input chan CmpMsg) {
         case m.Id == MsgGetState:
             cd.sendState(m)
         case m.Id == MsgAddAction:
-            cd.addAction(m.Action)
+            cd.AddAction(m.Action)
         }
     }
 }
@@ -94,7 +112,7 @@ func (cd CmpData) Run(input chan CmpMsg) {
 // Loop through each Action and let it run
 func (cd CmpData) update() {
     for _, v := range cd.actions {
-        v.Act(cd.states)
+        v.Act(cd)
     }
 }
 
