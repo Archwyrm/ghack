@@ -25,12 +25,12 @@ func (g Game) GameLoop() {
     playerChan := make(chan CmpMsg)
     go player.Run(playerChan)
 
-    msg := CmpMsg{Id: MsgAddAction, Action: &Move{1, 1}}
+    msg := MsgAddAction{&Move{1, 1}}
     playerChan <- msg
 
     reply := make(chan State)
-    msg2 := CmpMsg{Id: MsgGetState, StateId: "Position", StateReply: reply}
-    tick_msg := CmpMsg{Id: MsgTick}
+    msg2 := MsgGetState{"Position", reply}
+    tick_msg := MsgTick{}
     playerChan <- tick_msg // Tick once
 
     for i := 0; i < 3; i++ {

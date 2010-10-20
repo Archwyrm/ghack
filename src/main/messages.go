@@ -1,16 +1,29 @@
 package main
 
-// Struct for requesting a component to do something
-// Different fields will be filled in depending on the type of message
-type CmpMsg struct {
-    Id         int
-    StateId    string
-    StateReply chan State
-    Action     Action
+import "msgId/msgId"
+
+// Interface for requesting a component to do something
+type CmpMsg interface {
+    Id() int
 }
 
-const (
-    MsgTick      = iota // Signal to the component that it should update
-    MsgGetState         // Request a State to be returned on StateReply chan
-    MsgAddAction        // Add some kind of action to the Entity's list
-)
+// Message to update
+type MsgTick struct{}
+
+func (msg MsgTick) Id() int { return msgId.MsgTick }
+
+// Message requesting a certain state to be returned
+// Contains a channel where the reply should be sent
+type MsgGetState struct {
+    StateId    string
+    StateReply chan State
+}
+
+func (msg MsgGetState) Id() int { return msgId.MsgGetState }
+
+// Message to add an action that contains the action to be added
+type MsgAddAction struct {
+    Action Action
+}
+
+func (msg MsgAddAction) Id() int { return msgId.MsgAddAction }

@@ -2,6 +2,8 @@
 
 package main
 
+import "msgId/msgId"
+
 // Holds some kind of state data for a particular named property of an Entity.
 // Id() returns a unique ID for each Action (defined in cmpId package)
 // Name() returns a unique and semi-descriptive name for each Action (defined
@@ -95,16 +97,23 @@ func (cd CmpData) Run(input chan CmpMsg) {
     cd.input = input
 
     for {
-        m := <-input
+        msg := <-input
 
         // Call the appropriate function based on the msg type
         switch {
-        case m.Id == MsgTick:
+        case msg.Id() == msgId.MsgTick:
             cd.update()
-        case m.Id == MsgGetState:
-            cd.sendState(m)
-        case m.Id == MsgAddAction:
-            cd.AddAction(m.Action)
+
+        case msg.Id() == msgId.MsgGetState:
+            m, ok := msg.(MsgGetState)
+            if ok {
+                cd.sendState(m)
+            }
+        case msg.Id() == msgId.MsgAddAction:
+            m, ok := msg.(MsgAddAction)
+            if ok {
+                cd.AddAction(m.Action)
+            }
         }
     }
 }
@@ -117,7 +126,7 @@ func (cd CmpData) update() {
 }
 
 // Send back the requested State on the provided channel
-func (cd CmpData) sendState(msg CmpMsg) {
+func (cd CmpData) sendState(msg MsgGetState) {
     state := cd.states[msg.StateId]
     msg.StateReply <- state
 }
