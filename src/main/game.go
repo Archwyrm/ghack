@@ -18,7 +18,7 @@ func NewGame() *Game        { return &Game{NewCmpData()} }
 func (g Game) GameLoop() {
     // Initialize stuff
     entities := NewEntityList()
-    g.states[entities.Name()] = entities
+    g.states[entities.Id()] = entities
 
     player := NewPlayer()
     entities.Entities[player.Name()] = player
@@ -29,7 +29,7 @@ func (g Game) GameLoop() {
     playerChan <- msg
 
     reply := make(chan State)
-    msg2 := MsgGetState{"Position", reply}
+    msg2 := MsgGetState{cmpId.Position, reply}
     tick_msg := MsgTick{}
     playerChan <- tick_msg // Tick once
 

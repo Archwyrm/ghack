@@ -2,14 +2,17 @@
 
 package main
 
-import "msgId/msgId"
+import (
+    "cmpId/cmpId"
+    "msgId/msgId"
+)
 
 // Holds some kind of state data for a particular named property of an Entity.
 // Id() returns a unique ID for each Action (defined in cmpId package)
 // Name() returns a unique and semi-descriptive name for each Action (defined
 // by each Entity)
 type State interface {
-    Id() int
+    Id() cmpId.StateId
     Name() string
 }
 
@@ -19,7 +22,7 @@ type State interface {
 // Name() returns a unique and semi-descriptive name for each Action (defined
 // by each Entity)
 type Action interface {
-    Id() int
+    Id() cmpId.ActionId
     Name() string
     Act(ent Entity)
 }
@@ -35,13 +38,18 @@ type Action interface {
 // AddAction() adds the Action to the Entity.
 // RemoveAction() removes the Action from the Entity.
 type Entity interface {
-    Id() int
+    Id() cmpId.EntityId
     Name() string
     GetState(state State) State
     SetState(state State)
     AddAction(action Action)
     RemoveAction(action Action)
 }
+
+// Simplified declaration
+type StateList map[cmpId.StateId]State
+// Simplified declaration
+type ActionList map[cmpId.ActionId]Action
 
 // Contains all the data that each component needs.
 // TODO: Rename to 'Component'?
@@ -52,11 +60,6 @@ type CmpData struct {
     input   chan CmpMsg
 }
 
-// Simplified declaration
-type StateList map[string]State
-// Simplified declaration
-type ActionList map[string]Action
-
 // Creates a CmpData and initializes its containers.
 func NewCmpData() *CmpData {
     states := make(StateList)
@@ -65,7 +68,7 @@ func NewCmpData() *CmpData {
 }
 
 // Added to satisfy the Entity interface, clobbered by embedding.
-func (cd CmpData) Id() int { return 0 }
+func (cd CmpData) Id() cmpId.EntityId { return 0 }
 // Added to satisfy the Entity interface, clobbered by embedding.
 func (cd CmpData) Name() string { return "CmpData" }
 
@@ -73,23 +76,23 @@ func (cd CmpData) Name() string { return "CmpData" }
 
 // Returns the requested State. TODO: Take StateId?
 func (cd CmpData) GetState(state State) State {
-    ret := cd.states[state.Name()]
+    ret := cd.states[state.Id()]
     return ret
 }
 
 // Set the value of the passed State. Replaces any existing State that is the same.
 func (cd CmpData) SetState(state State) {
-    cd.states[state.Name()] = state
+    cd.states[state.Id()] = state
 }
 
 // Adds to an Entity's actions, causing the Action to be executed on the next tick.
 func (cd CmpData) AddAction(action Action) {
-    cd.actions[action.Name()] = action
+    cd.actions[action.Id()] = action
 }
 
 // Removes the Action from an Entity's actions.
 func (cd CmpData) RemoveAction(action Action) {
-    cd.actions[action.Name()] = nil, false
+    cd.actions[action.Id()] = nil, false
 }
 
 // Main loop which handles all component tasks.

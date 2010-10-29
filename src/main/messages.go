@@ -1,6 +1,9 @@
 package main
 
-import "msgId/msgId"
+import (
+    "cmpId/cmpId"
+    "msgId/msgId"
+)
 
 // Interface for requesting a component to do something
 type CmpMsg interface {
@@ -15,7 +18,7 @@ func (msg MsgTick) Id() int { return msgId.MsgTick }
 // Message requesting a certain state to be returned
 // Contains a channel where the reply should be sent
 type MsgGetState struct {
-    StateId    string
+    StateId    cmpId.StateId
     StateReply chan State
 }
 
