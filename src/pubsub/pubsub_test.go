@@ -2,87 +2,73 @@ package pubsub_test
 
 import (
     "testing"
+    "testing/script"
+    "fmt"
     "pubsub/pubsub"
     "core/core"
 )
 
-type subscriber struct {
-    received bool       // Whether the message has been received or not
-    ch chan interface{} // Subscription channel
-}
-
-var subscribers = []*subscriber {
-    &subscriber{false, make(chan interface{})},
-    &subscriber{false, make(chan interface{})},
-    &subscriber{false, make(chan interface{})},
-}
-
-var testData = []string {
+var testData = []string{
     "testing testing, one two three",
     "test here, test there, test everywhere",
     "quit being so testy!",
 }
 
-var topic = "test"
-var verified = false
-
-func TestPubSub(t *testing.T) {
+// Tests subscription followed by publishing
+func TestSubscribeAndPublish(t *testing.T) {
     // Initialize
+    topic := "test"
     psObj := pubsub.NewPubSub()
     ps := make(chan core.ServiceMsg)
     go psObj.Run(ps)
 
     // Subscribe
-    for _, s := range subscribers {
-        ps <- pubsub.SubscribeMsg{topic, s.ch}
-    }
+    chans := makeAndSubscribe(ps, topic, 10)
+
+    relay := startRelay(ps, topic)
 
     // Publish and verify one message at a time
-    for _, msg := range testData {
-        // Publish message
-        go func(ps chan core.ServiceMsg, data string) {
-            ps <- pubsub.PublishMsg{topic, data}
-        } (ps, msg)
+    var events, recvs []*script.Event
+    for _, data := range testData {
+        send := script.NewEvent("send", recvs, script.Send{relay, data})
+        recvs = makeRecvEvents(chans, []*script.Event{send}, data)
+        events = append(append(events, send), recvs...)
+    }
+    err := script.Perform(0, events)
 
-        // Receive and verify
-        var iface interface{}
-        for !verified {
-            select {
-            case iface = <-subscribers[0].ch:
-                verify(t, subscribers[0], msg, iface)
-            case iface = <-subscribers[1].ch:
-                verify(t, subscribers[1], msg, iface)
-            case iface = <-subscribers[2].ch:
-                verify(t, subscribers[2], msg, iface)
-            }
-        }
-        reset() // Reset verification for next message
+    if err != nil {
+        t.Errorf("Sent and published values do not match!\n%s", err.String())
     }
 }
 
-func verify(t *testing.T, sub *subscriber, msg string, iface interface{}) {
-    str := iface.(string)
-    if str == msg {
-        for i, s := range subscribers {
-            if sub == s {
-                subscribers[i].received = true
-            }
+// Relay proper messages to pubsub for testing purposes
+func startRelay(ps chan core.ServiceMsg, topic string) (relay chan interface{}) {
+    relay = make(chan interface{})
+    go func() {
+        for {
+            ps <- pubsub.PublishMsg{topic, <-relay}
         }
-    } else {
-        t.Fatalf("Sent message does not match received message, wanted: '%s'\ngot: '%s'", msg, str)
-    }
-
-    // Check whether all messages have been received
-    received := true
-    for _, s := range subscribers {
-        received = received && s.received
-    }
-    verified = received
+    }()
+    return
 }
 
-func reset() {
-    for i, _ := range subscribers {
-        subscribers[i].received = false
+// Makes 'count' channels and subscribes them
+func makeAndSubscribe(ps chan core.ServiceMsg, topic string, count int) (chans []chan interface{}) {
+    for i := 0; i < count; i++ {
+        ch := make(chan interface{})
+        ps <- pubsub.SubscribeMsg{topic, ch}
+        chans = append(chans, ch)
     }
-    verified = false
+    return
+}
+
+// Makes receive events from an array of channels
+// Returns a ready list of events
+func makeRecvEvents(chans []chan interface{}, pre []*script.Event, data interface{}) (events []*script.Event) {
+    for i, ch := range chans {
+        name := fmt.Sprintf("recv %d", i)
+        ev := script.NewEvent(name, pre, script.Recv{ch, data})
+        events = append(events, ev)
+    }
+    return
 }
