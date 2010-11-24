@@ -4,7 +4,6 @@ package main
 
 import (
     "cmpId/cmpId"
-    "msgId/msgId"
 )
 
 // Holds some kind of state data for a particular named property of an Entity.
@@ -103,20 +102,15 @@ func (cd CmpData) Run(input chan CmpMsg) {
         msg := <-input
 
         // Call the appropriate function based on the msg type
-        switch {
-        case msg.Id() == msgId.Tick:
+        switch m := msg.(type) {
+        case MsgTick:
             cd.update()
 
-        case msg.Id() == msgId.GetState:
-            m, ok := msg.(MsgGetState)
-            if ok {
-                cd.sendState(m)
-            }
-        case msg.Id() == msgId.AddAction:
-            m, ok := msg.(MsgAddAction)
-            if ok {
-                cd.AddAction(m.Action)
-            }
+        case MsgGetState:
+            cd.sendState(m)
+
+        case MsgAddAction:
+            cd.AddAction(m.Action)
         }
     }
 }

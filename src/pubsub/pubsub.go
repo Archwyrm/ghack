@@ -50,15 +50,15 @@ func (ps *PubSub) Run(input chan core.ServiceMsg) {
     for {
         msg := <-input
 
-        switch {
-        case msg.Id() == msgId.Publish:
-            ps.publish(msg.(PublishMsg))
+        switch m := msg.(type) {
+        case PublishMsg:
+            ps.publish(m)
 
-        case msg.Id() == msgId.Subscribe:
-            ps.subscribe(msg.(SubscribeMsg))
+        case SubscribeMsg:
+            ps.subscribe(m)
 
-        case msg.Id() == msgId.Unsubscribe:
-            ps.unsubscribe(msg.(UnsubscribeMsg))
+        case UnsubscribeMsg:
+            ps.unsubscribe(m)
         }
     }
 }
