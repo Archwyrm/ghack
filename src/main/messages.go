@@ -13,7 +13,7 @@ type CmpMsg interface {
 // Message to update
 type MsgTick struct{}
 
-func (msg MsgTick) Id() int { return msgId.MsgTick }
+func (msg MsgTick) Id() int { return msgId.Tick }
 
 // Message requesting a certain state to be returned
 // Contains a channel where the reply should be sent
@@ -22,11 +22,11 @@ type MsgGetState struct {
     StateReply chan State
 }
 
-func (msg MsgGetState) Id() int { return msgId.MsgGetState }
+func (msg MsgGetState) Id() int { return msgId.GetState }
 
 // Message to add an action that contains the action to be added
 type MsgAddAction struct {
     Action Action
 }
 
-func (msg MsgAddAction) Id() int { return msgId.MsgAddAction }
+func (msg MsgAddAction) Id() int { return msgId.AddAction }

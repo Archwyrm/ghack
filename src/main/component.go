@@ -104,15 +104,15 @@ func (cd CmpData) Run(input chan CmpMsg) {
 
         // Call the appropriate function based on the msg type
         switch {
-        case msg.Id() == msgId.MsgTick:
+        case msg.Id() == msgId.Tick:
             cd.update()
 
-        case msg.Id() == msgId.MsgGetState:
+        case msg.Id() == msgId.GetState:
             m, ok := msg.(MsgGetState)
             if ok {
                 cd.sendState(m)
             }
-        case msg.Id() == msgId.MsgAddAction:
+        case msg.Id() == msgId.AddAction:
             m, ok := msg.(MsgAddAction)
             if ok {
                 cd.AddAction(m.Action)
