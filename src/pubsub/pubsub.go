@@ -26,6 +26,15 @@ type SubscribeMsg struct {
 
 func (x SubscribeMsg) Id() msgId.MsgId { return msgId.Subscribe }
 
+// Message to remove a subscription to a given topic
+// ReplyChan is to identify the subscriber
+type UnsubscribeMsg struct {
+    Topic     string
+    ReplyChan chan interface{}
+}
+
+func (x UnsubscribeMsg) Id() msgId.MsgId { return msgId.Unsubscribe }
+
 // Publish/Subscribe struct
 type PubSub struct {
     subscriptions map[string][]chan interface{}
@@ -47,6 +56,9 @@ func (ps *PubSub) Run(input chan core.ServiceMsg) {
 
         case msg.Id() == msgId.Subscribe:
             ps.subscribe(msg.(SubscribeMsg))
+
+        case msg.Id() == msgId.Unsubscribe:
+            ps.unsubscribe(msg.(UnsubscribeMsg))
         }
     }
 }
@@ -62,4 +74,20 @@ func (ps *PubSub) publish(msg PublishMsg) {
 func (ps *PubSub) subscribe(msg SubscribeMsg) {
     subscribers := ps.subscriptions[msg.Topic]
     ps.subscriptions[msg.Topic] = append(subscribers, msg.ReplyChan)
+}
+
+// Removes a subscription from the given topic
+func (ps *PubSub) unsubscribe(msg UnsubscribeMsg) {
+    subs := ps.subscriptions[msg.Topic]
+    var rm_i int
+    for i, s := range subs {
+        if msg.ReplyChan == s {
+            rm_i = i
+            break // TODO: Remove multiple or disallow multiple subscription?
+        }
+    }
+
+    // Slice around rm_i
+    subs = append(subs[:rm_i], subs[rm_i+1:]...)
+    ps.subscriptions[msg.Topic] = subs
 }

@@ -4,6 +4,7 @@ import (
     "testing"
     "testing/script"
     "fmt"
+    "time"
     "pubsub/pubsub"
     "core/core"
 )
@@ -14,13 +15,12 @@ var testData = []string{
     "quit being so testy!",
 }
 
+var topic = "test"
+
 // Tests subscription followed by publishing
 func TestSubscribeAndPublish(t *testing.T) {
     // Initialize
-    topic := "test"
-    psObj := pubsub.NewPubSub()
-    ps := make(chan core.ServiceMsg)
-    go psObj.Run(ps)
+    ps := startPubSub()
 
     // Subscribe
     chans := makeAndSubscribe(ps, topic, 10)
@@ -39,6 +39,41 @@ func TestSubscribeAndPublish(t *testing.T) {
     if err != nil {
         t.Errorf("Sent and published values do not match!\n%s", err.String())
     }
+}
+
+// Test subscribing and then removing a subscription
+func TestUnsubscribe(t *testing.T) {
+    ps := startPubSub()
+    chans := makeAndSubscribe(ps, topic, 5)
+
+    ch_i := 2
+    ps <- pubsub.UnsubscribeMsg{topic, chans[ch_i]}
+
+    quit := make(chan bool)
+
+    // Error if we receive anything on the unsubscribed channel
+    go func() {
+        select {
+        case <-chans[ch_i]:
+            t.Fatalf("Received message on unsubscribed channel!")
+        case <-quit:
+            return
+        }
+    }()
+
+    // Drain the subscribed channels
+    for i, ch := range chans {
+        if i == ch_i {
+            continue
+        }
+        go func(ch chan interface{}) {
+            <-ch
+        }(ch)
+    }
+
+    ps <- pubsub.PublishMsg{topic, testData[0]}
+    time.Sleep(500 * 10e5) // Wait 500ms
+    quit <- true
 }
 
 // Relay proper messages to pubsub for testing purposes
@@ -70,5 +105,13 @@ func makeRecvEvents(chans []chan interface{}, pre []*script.Event, data interfac
         ev := script.NewEvent(name, pre, script.Recv{ch, data})
         events = append(events, ev)
     }
+    return
+}
+
+// Starts the PubSub in a goroutine and returns a channel to it
+func startPubSub() (ps chan core.ServiceMsg) {
+    psObj := pubsub.NewPubSub()
+    ps = make(chan core.ServiceMsg)
+    go psObj.Run(ps)
     return
 }

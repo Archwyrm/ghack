@@ -10,6 +10,7 @@ const (
     MsgAddAction        // Add some kind of action to the Entity's list
 
     // PubSub messages
-    Publish   // Publish a message to a topic
-    Subscribe // Subscribe to a topic
+    Publish     // Publish a message to a topic
+    Subscribe   // Subscribe to a topic
+    Unsubscribe // Unsubscribe from a topic
 )
