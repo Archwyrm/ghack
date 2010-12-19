@@ -1,0 +1,23 @@
+package protocol;
+
+// Base message
+message Message {
+    enum Type {
+        CONNECT = 1;
+        DISCONNECT = 2;
+    }
+
+    // Type of message that this contains
+    required Type type = 1;
+
+    // One of these will be filled in
+    optional Connect connect = 16;
+    optional Disconnect disconnect = 17;
+}
+
+message Connect {
+    required string version = 1;
+}
+
+message Disconnect {
+}
