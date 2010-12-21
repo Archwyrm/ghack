@@ -59,12 +59,19 @@ func listen(protocol string, address string) {
 }
 
 func connect(conn net.Conn) {
+    // Recover from fatal errors by closing the connection
+    // This goroutine then exits immediately afterwards
+    defer func() {
+        if e := recover(); e != nil {
+            log.Println(e)
+            conn.Close()
+        }
+    }()
+
     conn.SetReadTimeout(1e9) // 1s
     length, err := readLength(conn)
     if err != nil {
-        log.Println("Error reading message length:", err)
-        conn.Close()
-        return
+        panic("Error reading message length:" + err.String())
     }
 
     // Read the message bytes
@@ -76,38 +83,29 @@ func connect(conn net.Conn) {
     // Unmarshal connect pb
     connect := new(protocol.Connect)
     if err := proto.Unmarshal(bs, connect); err != nil {
-        log.Println("Error unmarshaling connect msg:", err)
-        conn.Close()
-        return
+        panic("Error unmarshaling connect msg:" + err.String())
     }
 
     // TODO: Send a wrong protocol message, for now just close
     vstr := fmt.Sprintf("%d", ProtocolVersion)
     if *connect.Version != vstr {
-        log.Println("Wrong protocol version", *connect.Version, "need", vstr)
-        conn.Close()
-        return
+        panic(fmt.Sprintf("Wrong protocol version %s, needed %s",
+            *connect.Version, vstr))
     }
 
     // Marshal connect reply pb
     connect.Version = &vstr
     bs, err = proto.Marshal(connect)
     if err != nil {
-        log.Println("Error marshaling version reply:", err)
-        conn.Close()
-        return
+        panic("Error marshaling version reply:" + err.String())
     }
 
     // Send pb
     if bs, err = PrependByteLength(bs); err != nil {
-        log.Println("Error:", err)
-        conn.Close()
-        return
+        panic("Cannot prepend:" + err.String())
     }
     if _, err := conn.Write(bs); err != nil {
-        log.Println("Error sending version reply:", err)
-        conn.Close()
-        return
+        panic("Error sending version reply:" + err.String())
     }
 
     conn.Close()
