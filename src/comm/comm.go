@@ -80,10 +80,14 @@ func connect(conn net.Conn) {
         log.Println("Error reading message:", err)
     }
 
-    // Unmarshal connect pb
-    connect := new(protocol.Connect)
-    if err := proto.Unmarshal(bs, connect); err != nil {
-        panic("Error unmarshaling connect msg:" + err.String())
+    // Unmarshal connect msg pb
+    msg := new(protocol.Message)
+    if err := proto.Unmarshal(bs, msg); err != nil {
+        panic("Error unmarshaling msg:" + err.String())
+    }
+    connect := msg.Connect
+    if connect == nil {
+        panic("Connect message not received!")
     }
 
     // TODO: Send a wrong protocol message, for now just close
@@ -95,7 +99,10 @@ func connect(conn net.Conn) {
 
     // Marshal connect reply pb
     connect.Version = &vstr
-    bs, err = proto.Marshal(connect)
+    msg.Reset()
+    msg.Connect = connect
+    msg.Type = protocol.NewMessage_Type(protocol.Message_CONNECT)
+    bs, err = proto.Marshal(msg)
     if err != nil {
         panic("Error marshaling version reply:" + err.String())
     }

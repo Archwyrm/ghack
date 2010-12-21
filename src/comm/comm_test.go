@@ -24,7 +24,9 @@ func TestConnect(t *testing.T) {
     vstr := fmt.Sprintf("%d", comm.ProtocolVersion)
     // Create protocol buffer to initiate connection
     connect := &protocol.Connect{&vstr, nil}
-    data, err := proto.Marshal(connect)
+    msg := &protocol.Message{Connect: connect,
+        Type: protocol.NewMessage_Type(protocol.Message_CONNECT)}
+    data, err := proto.Marshal(msg)
     if err != nil {
         t.Fatalf("Marshaling error: %s", err)
     }
@@ -57,11 +59,14 @@ func TestConnect(t *testing.T) {
         t.Fatalf("Error reading socket: %s", err)
     }
 
-    // Unmarshal the received data into a pb
-    reply_pb := new(protocol.Connect)
-    err2 := proto.Unmarshal(reply, reply_pb)
+    // Unmarshal the received data
+    err2 := proto.Unmarshal(reply, msg)
     if err2 != nil {
         t.Fatalf("Unmarshaling error: %s", err2)
+    }
+    reply_pb := msg.Connect
+    if reply_pb == nil {
+        t.Fatalf("Connect message not received!")
     }
 
     // Since the client and server are running the same code, the version
