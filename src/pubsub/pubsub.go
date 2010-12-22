@@ -7,7 +7,6 @@ package pubsub
 
 import (
     "core/core"
-    "msgId/msgId"
 )
 
 // Message to signal publishing of the passed data
@@ -16,7 +15,7 @@ type PublishMsg struct {
     Data  interface{}
 }
 
-func (x PublishMsg) Id() msgId.MsgId { return msgId.Publish }
+func (x PublishMsg) Name() string { return "PublishMsg" }
 
 // Message to setup a subscription to a given topic
 type SubscribeMsg struct {
@@ -24,7 +23,7 @@ type SubscribeMsg struct {
     ReplyChan chan interface{}
 }
 
-func (x SubscribeMsg) Id() msgId.MsgId { return msgId.Subscribe }
+func (x SubscribeMsg) Name() string { return "SubscribeMsg" }
 
 // Message to remove a subscription to a given topic
 // ReplyChan is to identify the subscriber
@@ -33,7 +32,7 @@ type UnsubscribeMsg struct {
     ReplyChan chan interface{}
 }
 
-func (x UnsubscribeMsg) Id() msgId.MsgId { return msgId.Unsubscribe }
+func (x UnsubscribeMsg) Name() string { return "UnsubscribeMsg" }
 
 // Publish/Subscribe struct
 type PubSub struct {
