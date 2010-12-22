@@ -68,55 +68,64 @@ func connect(conn net.Conn) {
         }
     }()
 
+    // Read connect message
     conn.SetReadTimeout(1e9) // 1s
-    length, err := readLength(conn)
-    if err != nil {
-        panic("Error reading message length:" + err.String())
-    }
-
-    // Read the message bytes
-    bs := make([]byte, length)
-    if _, err := io.ReadFull(conn, bs); err != nil {
-        log.Println("Error reading message:", err)
-    }
-
-    // Unmarshal connect msg pb
-    msg := new(protocol.Message)
-    if err := proto.Unmarshal(bs, msg); err != nil {
-        panic("Error unmarshaling msg:" + err.String())
-    }
+    msg := readMessage(conn)
     connect := msg.Connect
     if connect == nil {
         panic("Connect message not received!")
     }
 
-    // TODO: Send a wrong protocol message, for now just close
+    // Check protocol version
     vstr := fmt.Sprintf("%d", ProtocolVersion)
     if *connect.Version != vstr {
+        // TODO: Send a wrong protocol message, for now just close
         panic(fmt.Sprintf("Wrong protocol version %s, needed %s",
             *connect.Version, vstr))
     }
 
-    // Marshal connect reply pb
+    // Send connect reply
     connect.Version = &vstr
-    msg.Reset()
-    msg.Connect = connect
-    msg.Type = protocol.NewMessage_Type(protocol.Message_CONNECT)
-    bs, err = proto.Marshal(msg)
+    msg = &protocol.Message{Connect: connect,
+        Type: protocol.NewMessage_Type(protocol.Message_CONNECT)}
+    sendMessage(conn, msg)
+}
+
+func sendMessage(w io.Writer, msg *protocol.Message) {
+    // Marshal protobuf
+    bs, err := proto.Marshal(msg)
     if err != nil {
-        panic("Error marshaling version reply:" + err.String())
+        panic("Error marshaling message:" + err.String())
     }
 
     // Send pb
     if bs, err = PrependByteLength(bs); err != nil {
         panic("Cannot prepend:" + err.String())
     }
-    if _, err := conn.Write(bs); err != nil {
-        panic("Error sending version reply:" + err.String())
+    if _, err = w.Write(bs); err != nil {
+        panic("Error writing message:" + err.String())
+    }
+}
+
+func readMessage(r io.Reader) (msg *protocol.Message) {
+    // Read length
+    length, err := readLength(r)
+    if err != nil {
+        panic("Error reading message length:" + err.String())
     }
 
-    conn.Close()
-    // TODO: Wait for avatar request
+    // Read the message bytes
+    bs := make([]byte, length)
+    if _, err := io.ReadFull(r, bs); err != nil {
+        log.Println("Error reading message bytes:", err)
+    }
+
+    // Unmarshal
+    msg = new(protocol.Message)
+    if err := proto.Unmarshal(bs, msg); err != nil {
+        panic("Error unmarshaling msg:" + err.String())
+    }
+    return msg
 }
 
 // Reads the length of a message
