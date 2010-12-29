@@ -52,6 +52,7 @@ goprotobuf may be installed with the simple command:
 
 Once all the dependencies are present, run:
 
+    protoc --go_out=src/ protocol/protocol.proto
     gd -o ghack
 
 If successful, the output binary 'ghack' may be run.
