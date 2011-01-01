@@ -27,23 +27,57 @@ const (
 
 var byteOrder = binary.LittleEndian
 
+// addClient and removeClient are internal messages for manipulating the list
+// of clients in a thread safe way
+type addClientMsg struct {
+    cl *client
+}
+
+func (x addClientMsg) Name() string { return "addClientMsg" }
+
+type removeClientMsg struct {
+    cl     *client
+    reason string
+}
+
+func (x removeClientMsg) Name() string { return "addClientMsg" }
+
 type CommService struct {
+    clients []*client
     address string
 }
 
 func NewCommService(address string) *CommService {
-    return &CommService{address}
+    return &CommService{make([]*client, 5), address}
 }
 
 func (cs *CommService) Run(input chan core.ServiceMsg) {
-    go listen("tcp", cs.address)
+    go listen(input, "tcp", cs.address)
 
     for {
-        <-input
+        msg := <-input
+        switch m := msg.(type) {
+        case addClientMsg:
+            cs.clients = append(cs.clients, m.cl)
+            log.Println(m.cl.name, "connected")
+        case removeClientMsg:
+            cs.removeClient(m)
+        }
     }
 }
 
-func listen(protocol string, address string) {
+func (cs *CommService) removeClient(msg removeClientMsg) {
+    for i, cur := range cs.clients {
+        if msg.cl == cur {
+            cs.clients = append(cs.clients[:i], cs.clients[i+1:]...)
+            break
+        }
+    }
+    // TODO: publish disconnection, deal with player entity (when applicable)
+    log.Println(msg.cl.name, "disconnected:", msg.reason)
+}
+
+func listen(cs chan<- core.ServiceMsg, protocol string, address string) {
     l, err := net.Listen("tcp", address)
     defer l.Close()
     if err != nil {
@@ -58,11 +92,11 @@ func listen(protocol string, address string) {
             log.Println("Error accepting connection:", err)
             continue
         }
-        go connect(conn)
+        go connect(cs, conn)
     }
 }
 
-func connect(conn net.Conn) {
+func connect(cs chan<- core.ServiceMsg, conn net.Conn) {
     // Recover from fatal errors by closing the connection
     // This goroutine then exits immediately afterwards
     defer func() {
@@ -92,6 +126,21 @@ func connect(conn net.Conn) {
     connect.Version = &vstr
     msg = &protocol.Message{Connect: connect,
         Type: protocol.NewMessage_Type(protocol.Message_CONNECT)}
+    sendMessage(conn, msg)
+
+    // Read login message
+    msg = readMessage(conn)
+    login := msg.Login
+    if login == nil {
+        panic("Login message not received!")
+    }
+    // TODO: Handle proper login here
+    cs <- addClientMsg{newClient(cs, conn, login)}
+
+    // Send login reply
+    result := &protocol.LoginResult{Succeeded: proto.Bool(true)}
+    msg = &protocol.Message{LoginResult: result,
+        Type: protocol.NewMessage_Type(protocol.Message_LOGINRESULT)}
     sendMessage(conn, msg)
 }
 
@@ -155,4 +204,46 @@ func PrependByteLength(data []byte) ([]byte, os.Error) {
     }
     data = append(buf.Bytes(), data...)
     return data, nil
+}
+
+// Represents remote client. Contains queue of messages to send and permission
+// set governing what messages will be accepted and acted upon.
+type client struct {
+    name        string
+    conn        net.Conn
+    SendQueue   chan core.ServiceMsg
+    permissions uint32
+}
+
+// Create a new client and start up send/receive goroutines.
+func newClient(cs chan<- core.ServiceMsg, conn net.Conn, l *protocol.Login) *client {
+    ch := make(chan core.ServiceMsg)
+    cl := &client{*l.Name, conn, ch, proto.GetUint32(l.Permissions)}
+    go cl.RecvLoop(cs)
+    go cl.SendLoop()
+    return cl
+}
+
+// Receives messages from remote client and acts upon them if appropriate.
+func (cl *client) RecvLoop(cs chan<- core.ServiceMsg) {
+    for {
+        msg := readMessage(cl.conn)
+        switch msg.Type {
+        case protocol.NewMessage_Type(protocol.Message_DISCONNECT):
+            cs <- removeClientMsg{cl, *msg.Disconnect.Reason}
+        }
+    }
+}
+
+// Sends messages over the remote conn that come through the queue.
+func (cl *client) SendLoop() {
+    for {
+        msg := <-cl.SendQueue
+        if msg == nil && closed(cl.SendQueue) {
+            return
+        }
+        switch msg.(type) {
+        // TODO: Handle messages in the send queue
+        }
+    }
 }

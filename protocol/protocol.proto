@@ -9,6 +9,8 @@ message Message {
     enum Type {
         CONNECT = 1;
         DISCONNECT = 2;
+        LOGIN = 3;
+        LOGINRESULT = 4;
     }
 
     // Type of message that this contains
@@ -17,11 +19,29 @@ message Message {
     // One of these will be filled in
     optional Connect connect = 16;
     optional Disconnect disconnect = 17;
+    optional Login login = 18;
+    optional LoginResult login_result = 19;
 }
 
 message Connect {
+    // Protocol version in the format: "%d< optional software version string>"
+    // where %d is an integer protocol version, e.g.: "1 1414e56" or "1 0.11"
+    // A space trailing the protocol version is only required if the version string
+    // is provided.
     required string version = 1;
 }
 
 message Disconnect {
+    required string reason = 1;
+}
+
+message Login {
+    required string name = 1;
+    optional string authtoken = 2; // aka password
+    optional uint32 permissions = 3; // Requested permission set
+}
+
+message LoginResult {
+    required bool succeeded = 1;
+    optional uint32 reason = 2; // Reason for failure
 }

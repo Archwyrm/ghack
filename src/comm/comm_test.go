@@ -51,11 +51,11 @@ func TestConnect(t *testing.T) {
     // Wait 1s to read a reply
     fd.SetReadTimeout(1e9) // 1s
     // Read the message length
-    bs := make([]byte, 2)
-    if _, err := fd.Read(bs); err != nil {
+    len_bs := make([]byte, 2)
+    if _, err := fd.Read(len_bs); err != nil {
         t.Fatalf("Error reading socket: %s", err)
     }
-    length := binary.LittleEndian.Uint16(bs)
+    length := binary.LittleEndian.Uint16(len_bs)
 
     // Read the message
     reply := make([]byte, length)
@@ -77,5 +77,47 @@ func TestConnect(t *testing.T) {
     // strings should be exact
     if *reply_pb.Version != *connect.Version {
         t.Error("Version strings do not match!")
+    }
+
+    // Create login pb
+    login := &protocol.Login{Name: proto.String("TestPlayer")}
+    msg = &protocol.Message{Login: login,
+        Type: protocol.NewMessage_Type(protocol.Message_LOGIN)}
+    data, err = proto.Marshal(msg)
+    if err != nil {
+        t.Fatalf("Marshaling error: %s", err)
+    }
+    data, err = comm.PrependByteLength(data)
+    if err != nil {
+        t.Fatalf("Error: %s", err)
+    }
+
+    // Send login
+    if _, err := fd.Write(data); err != nil {
+        t.Fatalf("Error writing login message:", err)
+    }
+
+    // Read the message length
+    if _, err := fd.Read(len_bs); err != nil {
+        t.Fatalf("Error reading socket: %s", err)
+    }
+
+    length = binary.LittleEndian.Uint16(len_bs)
+    // Read the message
+    reply = make([]byte, length)
+    if _, err := fd.Read(reply); err != nil {
+        t.Fatalf("Error reading socket: %s", err)
+    }
+
+    // Unmarshal the received data
+    if err := proto.Unmarshal(reply, msg); err != nil {
+        t.Fatalf("Unmarshaling error: %s", err)
+    }
+    result := msg.LoginResult
+    if result == nil {
+        t.Fatalf("Connect message not received!")
+    }
+    if *result.Succeeded != true {
+        t.Fatalf("Login failed!")
     }
 }
