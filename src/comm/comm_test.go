@@ -9,7 +9,7 @@ import (
     "net"
     "fmt"
     "time"
-    "encoding/binary"
+    "os"
     "protocol/protocol"
     "core/core"
     "goprotobuf.googlecode.com/hg/proto"
@@ -29,44 +29,30 @@ func TestConnect(t *testing.T) {
     connect := &protocol.Connect{&vstr, nil}
     msg := &protocol.Message{Connect: connect,
         Type: protocol.NewMessage_Type(protocol.Message_CONNECT)}
-    data, err := proto.Marshal(msg)
-    if err != nil {
-        t.Fatalf("Marshaling error: %s", err)
-    }
-    data, err = prependByteLength(data)
-    if err != nil {
-        t.Fatalf("Error: %s", err)
-    }
 
     // Connect to the listening service and send
     fd, err := net.Dial("tcp", "", "localhost:9190")
     if err != nil {
         t.Fatalf("Could not connect to comm:", err)
     }
-    if _, err := fd.Write(data); err != nil {
-        t.Fatalf("Error writing connect message:", err)
-    }
+    // Recover from any panics from sending/receiving and print the error
+    failure := "Error sending connect message:"
+    defer func() {
+        if e := recover(); e != nil {
+            if err, ok := e.(os.Error); ok {
+                t.Fatalf(failure + err.String())
+            } else {
+                t.Fatalf(failure)
+            }
+            fd.Close()
+        }
+    }()
+    sendMessage(fd, msg)
 
     // Wait 1s to read a reply
     fd.SetReadTimeout(1e9) // 1s
-    // Read the message length
-    len_bs := make([]byte, 2)
-    if _, err := fd.Read(len_bs); err != nil {
-        t.Fatalf("Error reading socket: %s", err)
-    }
-    length := binary.LittleEndian.Uint16(len_bs)
-
-    // Read the message
-    reply := make([]byte, length)
-    if _, err := fd.Read(reply); err != nil {
-        t.Fatalf("Error reading socket: %s", err)
-    }
-
-    // Unmarshal the received data
-    err2 := proto.Unmarshal(reply, msg)
-    if err2 != nil {
-        t.Fatalf("Unmarshaling error: %s", err2)
-    }
+    failure = "Connect message not received:"
+    msg = readMessage(fd)
     reply_pb := msg.Connect
     if reply_pb == nil {
         t.Fatalf("Connect message not received!")
@@ -78,40 +64,16 @@ func TestConnect(t *testing.T) {
         t.Error("Version strings do not match!")
     }
 
-    // Create login pb
+    // Send login message
     login := &protocol.Login{Name: proto.String("TestPlayer")}
     msg = &protocol.Message{Login: login,
         Type: protocol.NewMessage_Type(protocol.Message_LOGIN)}
-    data, err = proto.Marshal(msg)
-    if err != nil {
-        t.Fatalf("Marshaling error: %s", err)
-    }
-    data, err = prependByteLength(data)
-    if err != nil {
-        t.Fatalf("Error: %s", err)
-    }
+    failure = "Error sending login message:"
+    sendMessage(fd, msg)
 
-    // Send login
-    if _, err := fd.Write(data); err != nil {
-        t.Fatalf("Error writing login message:", err)
-    }
-
-    // Read the message length
-    if _, err := fd.Read(len_bs); err != nil {
-        t.Fatalf("Error reading socket: %s", err)
-    }
-
-    length = binary.LittleEndian.Uint16(len_bs)
-    // Read the message
-    reply = make([]byte, length)
-    if _, err := fd.Read(reply); err != nil {
-        t.Fatalf("Error reading socket: %s", err)
-    }
-
-    // Unmarshal the received data
-    if err := proto.Unmarshal(reply, msg); err != nil {
-        t.Fatalf("Unmarshaling error: %s", err)
-    }
+    // Read login result message
+    failure = "Login result message not received:"
+    msg = readMessage(fd)
     result := msg.LoginResult
     if result == nil {
         t.Fatalf("Login result message not received!")
