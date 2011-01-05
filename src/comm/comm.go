@@ -1,4 +1,4 @@
-// Copyright 2010 The ghack Authors. All rights reserved.
+// Copyright 2010-2011 The ghack Authors. All rights reserved.
 // Use of this source code is governed by the GNU General Public License
 // version 3 (or any later version). See the file COPYING for details.
 
@@ -152,7 +152,7 @@ func sendMessage(w io.Writer, msg *protocol.Message) {
     }
 
     // Send pb
-    if bs, err = PrependByteLength(bs); err != nil {
+    if bs, err = prependByteLength(bs); err != nil {
         panic("Cannot prepend:" + err.String())
     }
     if _, err = w.Write(bs); err != nil {
@@ -189,8 +189,7 @@ func readLength(r io.Reader) (length uint16, err os.Error) {
 
 // Prepends the length of the passed byte array to the array.
 // Returns error if byte array is too large.
-// Public for testing purposes only.
-func PrependByteLength(data []byte) ([]byte, os.Error) {
+func prependByteLength(data []byte) ([]byte, os.Error) {
     data_len := len(data)
     if lengthBytes > maxMsgSize {
         return nil, os.NewError("Message size exceeds maxMsgSize")

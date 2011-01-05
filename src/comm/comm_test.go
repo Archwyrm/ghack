@@ -1,8 +1,8 @@
-// Copyright 2010 The ghack Authors. All rights reserved.
+// Copyright 2010-2011 The ghack Authors. All rights reserved.
 // Use of this source code is governed by the GNU General Public License
 // version 3 (or any later version). See the file COPYING for details.
 
-package comm_test
+package comm
 
 import (
     "testing"
@@ -10,7 +10,6 @@ import (
     "fmt"
     "time"
     "encoding/binary"
-    "comm/comm"
     "protocol/protocol"
     "core/core"
     "goprotobuf.googlecode.com/hg/proto"
@@ -19,13 +18,13 @@ import (
 // Tests the connection handshake
 func TestConnect(t *testing.T) {
     // Start new service on port 9190
-    svc := comm.NewCommService(":9190")
+    svc := NewCommService(":9190")
     cs := make(chan core.ServiceMsg)
     go svc.Run(cs)
     // Give time for the service to start listening
     time.Sleep(1e8) // 100 ms
 
-    vstr := fmt.Sprintf("%d", comm.ProtocolVersion)
+    vstr := fmt.Sprintf("%d", ProtocolVersion)
     // Create protocol buffer to initiate connection
     connect := &protocol.Connect{&vstr, nil}
     msg := &protocol.Message{Connect: connect,
@@ -34,7 +33,7 @@ func TestConnect(t *testing.T) {
     if err != nil {
         t.Fatalf("Marshaling error: %s", err)
     }
-    data, err = comm.PrependByteLength(data)
+    data, err = prependByteLength(data)
     if err != nil {
         t.Fatalf("Error: %s", err)
     }
@@ -87,7 +86,7 @@ func TestConnect(t *testing.T) {
     if err != nil {
         t.Fatalf("Marshaling error: %s", err)
     }
-    data, err = comm.PrependByteLength(data)
+    data, err = prependByteLength(data)
     if err != nil {
         t.Fatalf("Error: %s", err)
     }
