@@ -115,7 +115,7 @@ func TestConnect(t *testing.T) {
     }
     result := msg.LoginResult
     if result == nil {
-        t.Fatalf("Connect message not received!")
+        t.Fatalf("Login result message not received!")
     }
     if *result.Succeeded != true {
         t.Fatalf("Login failed!")
