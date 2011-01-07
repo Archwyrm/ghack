@@ -20,7 +20,7 @@ Current code is in a very skeletal state, however.
 
 License
 -------------------------------------------------------------------------------
-Copyright 2010 The ghack Authors. All rights reserved.
+Copyright 2010, 2011 The ghack Authors. All rights reserved.
 
 Unless otherwise noted, source code and assets are licensed under
 the terms of the GNU General Public License as published by the Free
