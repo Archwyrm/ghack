@@ -148,15 +148,15 @@ func sendMessage(w io.Writer, msg *protocol.Message) {
     // Marshal protobuf
     bs, err := proto.Marshal(msg)
     if err != nil {
-        panic("Error marshaling message:" + err.String())
+        panic("Error marshaling message: " + err.String())
     }
 
     // Send pb
     if bs, err = prependByteLength(bs); err != nil {
-        panic("Cannot prepend:" + err.String())
+        panic("Cannot prepend: " + err.String())
     }
     if _, err = w.Write(bs); err != nil {
-        panic("Error writing message:" + err.String())
+        panic("Error writing message: " + err.String())
     }
 }
 
@@ -164,7 +164,7 @@ func readMessage(r io.Reader) (msg *protocol.Message) {
     // Read length
     length, err := readLength(r)
     if err != nil {
-        panic("Error reading message length:" + err.String())
+        panic("Error reading message length: " + err.String())
     }
 
     // Read the message bytes
@@ -176,7 +176,7 @@ func readMessage(r io.Reader) (msg *protocol.Message) {
     // Unmarshal
     msg = new(protocol.Message)
     if err := proto.Unmarshal(bs, msg); err != nil {
-        panic("Error unmarshaling msg:" + err.String())
+        panic("Error unmarshaling msg: " + err.String())
     }
     return msg
 }
