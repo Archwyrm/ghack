@@ -161,9 +161,13 @@ func sendMessage(w io.Writer, msg *protocol.Message) {
 }
 
 func readMessage(r io.Reader) (msg *protocol.Message) {
+start:
     // Read length
     length, err := readLength(r)
     if err != nil {
+        if err == os.EOF {
+            goto start // No data was ready, read again
+        }
         panic("Error reading message length: " + err.String())
     }
 
