@@ -74,7 +74,10 @@ func (cs *CommService) removeClient(msg removeClientMsg) {
         }
     }
     // TODO: publish disconnection, deal with player entity (when applicable)
-    log.Println(msg.cl.name, "disconnected:", msg.reason)
+    if msg.reason != "" { // Pretty print
+        msg.reason = ": " + msg.reason
+    }
+    log.Println(msg.cl.name, "disconnected" + msg.reason)
 }
 
 func listen(cs chan<- core.ServiceMsg, protocol string, address string) {
@@ -233,9 +236,10 @@ func (cl *client) RecvLoop(cs chan<- core.ServiceMsg) {
     defer logAndClose(cl.conn)
     for {
         msg := readMessage(cl.conn)
-        switch msg.Type {
-        case protocol.NewMessage_Type(protocol.Message_DISCONNECT):
-            cs <- removeClientMsg{cl, *msg.Disconnect.Reason}
+        switch *msg.Type {
+        case protocol.Message_Type(protocol.Message_DISCONNECT):
+            cs <- removeClientMsg{cl, proto.GetString(msg.Disconnect.ReasonStr)}
+            return
         }
     }
 }

@@ -1,4 +1,4 @@
-// Copyright 2010 The ghack Authors. All rights reserved.
+// Copyright 2010, 2011 The ghack Authors. All rights reserved.
 // Use of this source code is governed by the GNU General Public License
 // version 3 (or any later version). See the file COPYING for details.
 
@@ -16,6 +16,7 @@ message Message {
     // Type of message that this contains
     required Type type = 1;
 
+    // Only frequent messages should have an id < 16
     // One of these will be filled in
     optional Connect connect = 16;
     optional Disconnect disconnect = 17;
@@ -32,7 +33,15 @@ message Connect {
 }
 
 message Disconnect {
-    required string reason = 1;
+    enum Reason {
+        QUIT = 1;                   // Normal quit
+        PROTOCOL_ERROR = 2;         // Some thing that violates the protocol was done
+        WRONG_PROTOCOL_VERSION = 3; // Incompatible protocol versions
+        KICKED = 4;                 // Forcibly disconnected by user with admin rights
+    }
+    required Reason reason = 1;
+    optional string reason_str = 2; // Human readable information about disconnect,
+                                    // such as a debug message, or maybe kick message
 }
 
 message Login {

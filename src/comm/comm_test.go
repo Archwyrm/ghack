@@ -81,4 +81,15 @@ func TestConnect(t *testing.T) {
     if *result.Succeeded != true {
         t.Fatalf("Login failed!")
     }
+
+    // Send disconnect
+    failure = "Sending disconnect:"
+    disconn := &protocol.Disconnect{protocol.NewDisconnect_Reason(protocol.Disconnect_QUIT),
+        proto.String("Test finished"), nil}
+    msg = &protocol.Message{Disconnect: disconn,
+        Type: protocol.NewMessage_Type(protocol.Message_DISCONNECT)}
+    sendMessage(fd, msg)
+
+    fd.Close()
+    time.Sleep(1e6) // 1 ms, give time for disconnect to process
 }
