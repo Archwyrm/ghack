@@ -131,13 +131,14 @@ func connect(cs chan<- core.ServiceMsg, conn net.Conn) {
         panic("Login message not received!")
     }
     // TODO: Handle proper login here
-    cs <- addClientMsg{newClient(cs, conn, login)}
 
     // Send login reply
     result := &protocol.LoginResult{Succeeded: proto.Bool(true)}
     msg = &protocol.Message{LoginResult: result,
         Type: protocol.NewMessage_Type(protocol.Message_LOGINRESULT)}
     sendMessage(conn, msg)
+
+    cs <- addClientMsg{newClient(cs, conn, login)}
 }
 
 // Recovers from fatal errors, logs them, and closes the connection
