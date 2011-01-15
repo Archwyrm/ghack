@@ -97,14 +97,7 @@ func listen(cs chan<- core.ServiceMsg, protocol string, address string) {
 }
 
 func connect(cs chan<- core.ServiceMsg, conn net.Conn) {
-    // Recover from fatal errors by closing the connection
-    // This goroutine then exits immediately afterwards
-    defer func() {
-        if e := recover(); e != nil {
-            log.Println(e)
-            conn.Close()
-        }
-    }()
+    defer logAndClose(conn)
 
     // Read connect message
     conn.SetReadTimeout(1e9) // 1s
@@ -142,6 +135,14 @@ func connect(cs chan<- core.ServiceMsg, conn net.Conn) {
     msg = &protocol.Message{LoginResult: result,
         Type: protocol.NewMessage_Type(protocol.Message_LOGINRESULT)}
     sendMessage(conn, msg)
+}
+
+// Recovers from fatal errors, logs them, and closes the connection
+func logAndClose(conn net.Conn) {
+    if e := recover(); e != nil {
+        log.Println(e)
+        conn.Close()
+    }
 }
 
 func sendMessage(w io.Writer, msg *protocol.Message) {
@@ -229,6 +230,7 @@ func newClient(cs chan<- core.ServiceMsg, conn net.Conn, l *protocol.Login) *cli
 
 // Receives messages from remote client and acts upon them if appropriate.
 func (cl *client) RecvLoop(cs chan<- core.ServiceMsg) {
+    defer logAndClose(cl.conn)
     for {
         msg := readMessage(cl.conn)
         switch msg.Type {
@@ -240,6 +242,7 @@ func (cl *client) RecvLoop(cs chan<- core.ServiceMsg) {
 
 // Sends messages over the remote conn that come through the queue.
 func (cl *client) SendLoop() {
+    defer logAndClose(cl.conn)
     for {
         msg := <-cl.SendQueue
         if msg == nil && closed(cl.SendQueue) {
