@@ -77,7 +77,7 @@ func (cs *CommService) removeClient(msg removeClientMsg) {
     if msg.reason != "" { // Pretty print
         msg.reason = ": " + msg.reason
     }
-    log.Println(msg.cl.name, "disconnected" + msg.reason)
+    log.Println(msg.cl.name, "disconnected"+msg.reason)
 }
 
 func listen(cs chan<- core.ServiceMsg, protocol string, address string) {
