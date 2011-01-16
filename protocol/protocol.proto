@@ -2,6 +2,55 @@
 // Use of this source code is governed by the GNU General Public License
 // version 3 (or any later version). See the file COPYING for details.
 
+// Protocol version 1
+//
+// This file contains the Protocol Buffer definitions necessary for remote
+// communication. What follows is an overview of how to use the protobufs.
+//
+// The most basic part of this protocol is the Message message (pay
+// careful attention to capitalization). It contains all other messages when
+// sent and the type of message must be defined within. Note that only one
+// message may be sent within a Message at a time, while it is not an error
+// to fill in more than one message, it is a waste as only the defined Type
+// will be acknowledged.
+//
+// Each Message is prefixed by its size. This length is stored in the
+// first two bytes sent. Thus the maximum length of a message at this time
+// is 2^16 bytes.
+//
+// Thus to send any message, the following steps are required:
+// 1. Create desired message
+// 2. Create encapsulating Message
+// 3. Set Type in Message
+// 4. Assign message to its corresponding variable within the Message
+// 5. Send length of message (this length of a fully filled Message)
+// 6. Send message
+// 7. Ready to send the next message
+//
+// This method is reliable with any transmission method that is reliable
+// and in-order such as TCP, unix sockets, and unix pipes.
+// While most communication is asynchronus, the initial handshake has
+// an expected order before the server will accept general messages. The
+// purpose is to establish that both peers are speaking the same protocol
+// and to allow any authentication.
+//
+// The handshake goes as follows:
+// 1. Client sends Connect with used protocol version
+// 2. Server replies with Connect
+// 3. Client sends Login, only a username is required but the login may
+//    still require authentication depending on server settings.
+// 4. Server sends LoginResult which tells the client whether the login
+//    was accepted and if not, why not.
+//
+// After this handshake, general communication may progress. Generally,
+// this will begin with the server sending the current game state to the
+// the client.
+//
+// When the client wishes to disconnect, it may send a Disconnect message.
+//
+// For detailed information on how to use each message, see the comments
+// for the given message.
+
 package protocol;
 
 // Base message
