@@ -200,7 +200,7 @@ func readLength(r io.Reader) (length uint16, err os.Error) {
 // Returns error if byte array is too large.
 func prependByteLength(data []byte) ([]byte, os.Error) {
     data_len := len(data)
-    if lengthBytes > maxMsgSize {
+    if data_len > maxMsgSize {
         return nil, os.NewError("Message size exceeds maxMsgSize")
     }
     length := uint16(data_len)
