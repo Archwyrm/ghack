@@ -106,8 +106,13 @@ message Login {
 }
 
 message LoginResult {
+    enum Reason {
+        ACCESS_DENIED = 1; // Wrong username or password
+        SERVER_FULL = 2;   // Server has reached its maximum number of connected clients
+        BANNED = 3;        // There is an administrative ban on connecting IP and/or account
+    }
     required bool succeeded = 1;
-    optional uint32 reason = 2; // Reason for failure
+    optional Reason reason = 2; // Reason for failure, unset on success
 }
 
 message AddEntity {
