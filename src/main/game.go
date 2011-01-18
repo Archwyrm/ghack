@@ -6,6 +6,7 @@ package main
 
 import (
     "fmt"
+    "time"
     "cmpId/cmpId"
 )
 
@@ -37,10 +38,11 @@ func (g Game) GameLoop() {
     tick_msg := MsgTick{}
     playerChan <- tick_msg // Tick once
 
-    for i := 0; i < 3; i++ {
+    for {
         playerChan <- msg2
         pos := (<-reply).(Position)
         fmt.Printf("Position is currently: %d, %d\n", pos.X, pos.Y)
         playerChan <- tick_msg
+        time.Sleep(5e9) // 3s
     }
 }

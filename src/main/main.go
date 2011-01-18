@@ -7,10 +7,15 @@ package main
 
 import (
     "fmt"
+    "core/core"
+    "comm/comm"
 )
 
 func main() {
     fmt.Printf("Game started\n")
+
+    svc := comm.NewCommService(":9190")
+    go svc.Run(make(chan core.ServiceMsg))
 
     game := NewGame()
     game.GameLoop()
