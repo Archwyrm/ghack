@@ -81,11 +81,10 @@ message Message {
 }
 
 message Connect {
-    // Protocol version in the format: "%d< optional software version string>"
-    // where %d is an integer protocol version, e.g.: "1 1414e56" or "1 0.11"
-    // A space trailing the protocol version is only required if the version string
-    // is provided.
-    required string version = 1;
+    // Protocol version being used, should match the version at the top of this file
+    required uint32 version = 1;
+    // Software version string, such as: "1414e56" (git SHA1) or "0.11" (release version)
+    optional string version_str = 2;
 }
 
 message Disconnect {

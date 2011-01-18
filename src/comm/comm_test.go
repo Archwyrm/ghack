@@ -7,7 +7,6 @@ package comm
 import (
     "testing"
     "net"
-    "fmt"
     "time"
     "os"
     "protocol/protocol"
@@ -24,9 +23,8 @@ func TestConnect(t *testing.T) {
     // Give time for the service to start listening
     time.Sleep(1e8) // 100 ms
 
-    vstr := fmt.Sprintf("%d", ProtocolVersion)
     // Create protocol buffer to initiate connection
-    connect := &protocol.Connect{&vstr, nil}
+    connect := &protocol.Connect{proto.Uint32(ProtocolVersion), nil, nil}
     msg := &protocol.Message{Connect: connect,
         Type: protocol.NewMessage_Type(protocol.Message_CONNECT)}
 

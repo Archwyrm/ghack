@@ -111,15 +111,14 @@ func connect(cs chan<- core.ServiceMsg, conn net.Conn) {
     }
 
     // Check protocol version
-    vstr := fmt.Sprintf("%d", ProtocolVersion)
-    if *connect.Version != vstr {
+    if *connect.Version != ProtocolVersion {
         // TODO: Send a wrong protocol message, for now just close
-        panic(fmt.Sprintf("Wrong protocol version %s, needed %s",
-            *connect.Version, vstr))
+        panic(fmt.Sprintf("Wrong protocol version %d, needed %d",
+            *connect.Version, ProtocolVersion))
     }
 
     // Send connect reply
-    connect.Version = &vstr
+    connect.Version = proto.Uint32(ProtocolVersion)
     msg = &protocol.Message{Connect: connect,
         Type: protocol.NewMessage_Type(protocol.Message_CONNECT)}
     sendMessage(conn, msg)
