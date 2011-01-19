@@ -2,3 +2,4 @@ ghack
 *.8
 src/protocol/
 src/tmp*/
+*.swp
