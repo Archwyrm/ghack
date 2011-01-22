@@ -50,11 +50,11 @@ func TestConnect(t *testing.T) {
     // Wait 1s to read a reply
     fd.SetReadTimeout(1e9) // 1s
     failure = "Connect message not received:"
-    msg = readMessage(fd)
-    reply_pb := msg.Connect
-    if reply_pb == nil {
+    msg, ok := readMessage(fd)
+    if !ok || msg.Connect == nil {
         t.Fatalf("Connect message not received!")
     }
+    reply_pb := msg.Connect
 
     // Since the client and server are running the same code, the version
     // strings should be exact
@@ -71,11 +71,11 @@ func TestConnect(t *testing.T) {
 
     // Read login result message
     failure = "Login result message not received:"
-    msg = readMessage(fd)
-    result := msg.LoginResult
-    if result == nil {
+    msg, ok = readMessage(fd)
+    if !ok || msg.LoginResult == nil {
         t.Fatalf("Login result message not received!")
     }
+    result := msg.LoginResult
     if *result.Succeeded != true {
         t.Fatalf("Login failed!")
     }

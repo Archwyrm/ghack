@@ -104,11 +104,11 @@ func connect(cs chan<- core.ServiceMsg, conn net.Conn) {
 
     // Read connect message
     conn.SetReadTimeout(1e9) // 1s
-    msg := readMessage(conn)
-    connectMsg := msg.Connect
-    if connectMsg == nil {
+    msg, ok := readMessage(conn)
+    if !ok || msg.Connect == nil {
         panic("Connect message not received!")
     }
+    connectMsg := msg.Connect
 
     // Check protocol version
     if *connectMsg.Version != ProtocolVersion {
@@ -124,11 +124,11 @@ func connect(cs chan<- core.ServiceMsg, conn net.Conn) {
     sendMessage(conn, msg)
 
     // Read login message
-    msg = readMessage(conn)
-    login := msg.Login
-    if login == nil {
+    msg, ok = readMessage(conn)
+    if !ok || msg.Login == nil {
         panic("Login message not received!")
     }
+    login := msg.Login
     // TODO: Handle proper login here
 
     // Send login reply
@@ -164,13 +164,15 @@ func sendMessage(w io.Writer, msg *protocol.Message) {
     }
 }
 
-func readMessage(r io.Reader) (msg *protocol.Message) {
+func readMessage(r io.Reader) (msg *protocol.Message, ok bool) {
 start:
     // Read length
     length, err := readLength(r)
     if err != nil {
         if err == os.EOF {
             goto start // No data was ready, read again
+        } else if err == os.EINVAL {
+            return nil, false // Socket closed mid-read
         }
         panic("Error reading message length: " + err.String())
     }
@@ -186,7 +188,7 @@ start:
     if err := proto.Unmarshal(bs, msg); err != nil {
         panic("Error unmarshaling msg: " + err.String())
     }
-    return msg
+    return msg, true
 }
 
 // Reads the length of a message
@@ -235,7 +237,10 @@ func newClient(cs chan<- core.ServiceMsg, conn net.Conn, l *protocol.Login) *cli
 func (cl *client) RecvLoop(cs chan<- core.ServiceMsg) {
     defer logAndClose(cl.conn)
     for {
-        msg := readMessage(cl.conn)
+        msg, ok := readMessage(cl.conn)
+        if !ok {
+            cs <- removeClientMsg{cl, "Client hung up unexpectedly"}
+        }
         switch *msg.Type {
         case protocol.Message_Type(protocol.Message_DISCONNECT):
             cs <- removeClientMsg{cl, proto.GetString(msg.Disconnect.ReasonStr)}
