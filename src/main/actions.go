@@ -1,24 +1,25 @@
-// Copyright 2010 The ghack Authors. All rights reserved.
+// Copyright 2010, 2011 The ghack Authors. All rights reserved.
 // Use of this source code is governed by the GNU General Public License
 // version 3 (or any later version). See the file COPYING for details.
 
 package main
 
 import (
+    "core/core"
     "cmpId/cmpId"
 )
 
 // Adds the passed Entity to an Entity's EntityList. Used by Game to
 // populate its list.
 type AddEntity struct {
-    newEntity Entity
+    newEntity core.Entity
 }
 
-func (a AddEntity) Id() cmpId.ActionId         { return cmpId.AddEntity }
-func (a AddEntity) Name() string               { return "AddEntity" }
-func NewAddEntity(newEntity Entity) *AddEntity { return &AddEntity{newEntity} }
+func (a AddEntity) Id() cmpId.ActionId              { return cmpId.AddEntity }
+func (a AddEntity) Name() string                    { return "AddEntity" }
+func NewAddEntity(newEntity core.Entity) *AddEntity { return &AddEntity{newEntity} }
 
-func (a AddEntity) Act(ent Entity) {
+func (a AddEntity) Act(ent core.Entity) {
     var list EntityList
     list = ent.GetState(list).(EntityList)
     list.Entities[a.newEntity.Name()] = a.newEntity
@@ -34,7 +35,7 @@ func (a Move) Id() cmpId.ActionId { return cmpId.Move }
 func (a Move) Name() string       { return "Move" }
 
 // Modifies the Position of an Entity with the passed Move vector.
-func (a Move) Act(ent Entity) {
+func (a Move) Act(ent core.Entity) {
     var pos Position
     var ok bool
     // Automatically create a position if it does not exist, keep?

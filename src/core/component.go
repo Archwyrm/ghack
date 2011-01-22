@@ -1,10 +1,10 @@
-// Copyright 2010 The ghack Authors. All rights reserved.
+// Copyright 2010, 2011 The ghack Authors. All rights reserved.
 // Use of this source code is governed by the GNU General Public License
 // version 3 (or any later version). See the file COPYING for details.
 
 // Contains everything necessary for component system
 
-package main
+package core
 
 import (
     "cmpId/cmpId"
@@ -78,28 +78,28 @@ func (cd CmpData) Name() string { return "CmpData" }
 // The next functions form the core functionality of a component.
 
 // Returns the requested State. TODO: Take StateId?
-func (cd CmpData) GetState(state State) State {
+func (cd *CmpData) GetState(state State) State {
     ret := cd.states[state.Id()]
     return ret
 }
 
 // Set the value of the passed State. Replaces any existing State that is the same.
-func (cd CmpData) SetState(state State) {
+func (cd *CmpData) SetState(state State) {
     cd.states[state.Id()] = state
 }
 
 // Adds to an Entity's actions, causing the Action to be executed on the next tick.
-func (cd CmpData) AddAction(action Action) {
+func (cd *CmpData) AddAction(action Action) {
     cd.actions[action.Id()] = action
 }
 
 // Removes the Action from an Entity's actions.
-func (cd CmpData) RemoveAction(action Action) {
+func (cd *CmpData) RemoveAction(action Action) {
     cd.actions[action.Id()] = nil, false
 }
 
 // Main loop which handles all component tasks.
-func (cd CmpData) Run(input chan CmpMsg) {
+func (cd *CmpData) Run(input chan CmpMsg) {
     cd.input = input
 
     for {
@@ -120,14 +120,14 @@ func (cd CmpData) Run(input chan CmpMsg) {
 }
 
 // Loop through each Action and let it run
-func (cd CmpData) update() {
+func (cd *CmpData) update() {
     for _, v := range cd.actions {
         v.Act(cd)
     }
 }
 
 // Send back the requested State on the provided channel
-func (cd CmpData) sendState(msg MsgGetState) {
+func (cd *CmpData) sendState(msg MsgGetState) {
     state := cd.states[msg.StateId]
     msg.StateReply <- state
 }

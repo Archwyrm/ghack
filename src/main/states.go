@@ -1,10 +1,11 @@
-// Copyright 2010 The ghack Authors. All rights reserved.
+// Copyright 2010, 2011 The ghack Authors. All rights reserved.
 // Use of this source code is governed by the GNU General Public License
 // version 3 (or any later version). See the file COPYING for details.
 
 package main
 
 import (
+    "core/core"
     "cmpId/cmpId"
 )
 
@@ -12,14 +13,14 @@ import (
 // not shared references. Currently used by the Game entity to contain all
 // other entities.
 type EntityList struct {
-    Entities map[string]Entity
+    Entities map[string]core.Entity
 }
 
 func (p EntityList) Id() cmpId.StateId { return cmpId.EntityList }
 func (p EntityList) Name() string      { return "EntityList" }
 
 func NewEntityList() *EntityList {
-    return &EntityList{make(map[string]Entity)}
+    return &EntityList{make(map[string]core.Entity)}
 }
 
 // Simple 2D position
