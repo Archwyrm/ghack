@@ -105,21 +105,21 @@ func connect(cs chan<- core.ServiceMsg, conn net.Conn) {
     // Read connect message
     conn.SetReadTimeout(1e9) // 1s
     msg := readMessage(conn)
-    connect := msg.Connect
-    if connect == nil {
+    connectMsg := msg.Connect
+    if connectMsg == nil {
         panic("Connect message not received!")
     }
 
     // Check protocol version
-    if *connect.Version != ProtocolVersion {
+    if *connectMsg.Version != ProtocolVersion {
         // TODO: Send a wrong protocol message, for now just close
         panic(fmt.Sprintf("Wrong protocol version %d, needed %d",
-            *connect.Version, ProtocolVersion))
+            *connectMsg.Version, ProtocolVersion))
     }
 
     // Send connect reply
-    connect.Version = proto.Uint32(ProtocolVersion)
-    msg = &protocol.Message{Connect: connect,
+    connectMsg.Version = proto.Uint32(ProtocolVersion)
+    msg = &protocol.Message{Connect: connectMsg,
         Type: protocol.NewMessage_Type(protocol.Message_CONNECT)}
     sendMessage(conn, msg)
 
