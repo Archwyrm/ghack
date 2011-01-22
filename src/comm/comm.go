@@ -82,16 +82,19 @@ func (cs *CommService) removeClient(msg removeClientMsg) {
 
 func listen(cs chan<- core.ServiceMsg, protocol string, address string) {
     l, err := net.Listen(protocol, address)
-    defer l.Close()
     if err != nil {
         log.Println("Error listening:", err)
+        return
     } else {
         log.Println("Server listening on", address)
     }
+    defer l.Close()
 
     for { // TODO: Need to be able to shutdown the server remotely
         conn, err := l.Accept()
-        if err != nil {
+        if err == os.EINVAL {
+            return // socket was closed
+        } else if err != nil {
             log.Println("Error accepting connection:", err)
             continue
         }
@@ -240,6 +243,7 @@ func (cl *client) RecvLoop(cs chan<- core.ServiceMsg) {
         msg, ok := readMessage(cl.conn)
         if !ok {
             cs <- removeClientMsg{cl, "Client hung up unexpectedly"}
+            return
         }
         switch *msg.Type {
         case protocol.Message_Type(protocol.Message_DISCONNECT):
