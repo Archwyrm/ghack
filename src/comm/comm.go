@@ -81,7 +81,7 @@ func (cs *CommService) removeClient(msg removeClientMsg) {
 }
 
 func listen(cs chan<- core.ServiceMsg, protocol string, address string) {
-    l, err := net.Listen("tcp", address)
+    l, err := net.Listen(protocol, address)
     defer l.Close()
     if err != nil {
         log.Println("Error listening:", err)
