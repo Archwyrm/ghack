@@ -10,7 +10,6 @@ import (
     "time"
     "protocol/protocol"
     "core/core"
-    "goprotobuf.googlecode.com/hg/proto"
 )
 
 func startServer(t *testing.T) (svc *CommService, cs chan core.ServiceMsg) {
@@ -47,10 +46,8 @@ func connectClient(t *testing.T, fd net.Conn) {
     }()
 
     // Create protocol buffer to initiate connection
-    connect := &protocol.Connect{proto.Uint32(ProtocolVersion), nil, nil}
-    msg := &protocol.Message{Connect: connect,
-        Type: protocol.NewMessage_Type(protocol.Message_CONNECT)}
-    sendMessage(fd, msg)
+    connect := makeConnect()
+    sendMessage(fd, connect)
 
     failure = "Connect message not received"
     msg, ok := readMessage(fd)
@@ -61,16 +58,14 @@ func connectClient(t *testing.T, fd net.Conn) {
 
     // Since the client and server are running the same code, the version
     // strings should be exact
-    if *reply_pb.Version != *connect.Version {
-        t.Fatalf("Version strings do not match")
+    if *reply_pb.Version != *connect.Connect.Version {
+        t.Error("Version strings do not match")
     }
 
     // Send login message
     failure = "Error sending login message"
-    login := &protocol.Login{Name: proto.String("TestPlayer")}
-    msg = &protocol.Message{Login: login,
-        Type: protocol.NewMessage_Type(protocol.Message_LOGIN)}
-    sendMessage(fd, msg)
+    login := makeLogin("TestPlayer", "passwordHash", 0)
+    sendMessage(fd, login)
 
     // Read login result message
     failure = "Login result message not received"
@@ -105,11 +100,8 @@ func TestConnect(t *testing.T) {
             cs <- ShutdownServerMsg{}
         }
     }()
-    disconn := &protocol.Disconnect{protocol.NewDisconnect_Reason(protocol.Disconnect_QUIT),
-        proto.String("Test finished"), nil}
-    msg := &protocol.Message{Disconnect: disconn,
-        Type: protocol.NewMessage_Type(protocol.Message_DISCONNECT)}
-    sendMessage(fd, msg)
+    disconnect := makeDisconnect(protocol.Disconnect_QUIT, "Test finished")
+    sendMessage(fd, disconnect)
 
     fd.Close()
 

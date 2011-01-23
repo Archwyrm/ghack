@@ -148,19 +148,16 @@ func connect(cs chan<- core.ServiceMsg, conn net.Conn) {
     if !ok || msg.Connect == nil {
         panic("Connect message not received!")
     }
-    connectMsg := msg.Connect
 
     // Check protocol version
-    if *connectMsg.Version != ProtocolVersion {
+    if *msg.Connect.Version != ProtocolVersion {
         // TODO: Send a wrong protocol message, for now just close
         panic(fmt.Sprintf("Wrong protocol version %d, needed %d",
-            *connectMsg.Version, ProtocolVersion))
+            *msg.Connect.Version, ProtocolVersion))
     }
 
     // Send connect reply
-    connectMsg.Version = proto.Uint32(ProtocolVersion)
-    msg = &protocol.Message{Connect: connectMsg,
-        Type: protocol.NewMessage_Type(protocol.Message_CONNECT)}
+    msg = makeConnect()
     sendMessage(conn, msg)
 
     // Read login message
@@ -172,9 +169,7 @@ func connect(cs chan<- core.ServiceMsg, conn net.Conn) {
     // TODO: Handle proper login here
 
     // Send login reply
-    result := &protocol.LoginResult{Succeeded: proto.Bool(true)}
-    msg = &protocol.Message{LoginResult: result,
-        Type: protocol.NewMessage_Type(protocol.Message_LOGINRESULT)}
+    msg = makeLoginResult(true, 0)
     sendMessage(conn, msg)
 
     cs <- addClientMsg{newClient(cs, conn, login)}
