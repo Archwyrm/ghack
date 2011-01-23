@@ -42,6 +42,11 @@ type removeClientMsg struct {
 
 func (x removeClientMsg) Name() string { return "addClientMsg" }
 
+// Message to shut the server down gracefully
+type ShutdownServerMsg struct{}
+
+func (msg ShutdownServerMsg) Name() string { return "ShutdownServerMsg" }
+
 type CommService struct {
     clients []*client
     address string
@@ -52,7 +57,8 @@ func NewCommService(address string) *CommService {
 }
 
 func (cs *CommService) Run(input chan core.ServiceMsg) {
-    go listen(input, "tcp", cs.address)
+    shutdown := make(chan bool)
+    go listen(input, "tcp", cs.address, shutdown)
 
     for {
         msg := <-input
@@ -62,8 +68,26 @@ func (cs *CommService) Run(input chan core.ServiceMsg) {
             log.Println(m.cl.name, "connected")
         case removeClientMsg:
             cs.removeClient(m)
+        case ShutdownServerMsg:
+            shutdown <- true      // stop listening first so we don't
+            cs.removeAllClients() // add any more clients
+            return
         }
     }
+}
+
+func (cs *CommService) removeAllClients() {
+    log.Println("Shutting down server")
+    num_clients := len(cs.clients)
+    for _, cl := range cs.clients {
+        if cl == nil {
+            continue
+        }
+
+        cl.conn.Close()
+    }
+
+    cs.clients = make([]*client, num_clients)
 }
 
 func (cs *CommService) removeClient(msg removeClientMsg) {
@@ -80,7 +104,7 @@ func (cs *CommService) removeClient(msg removeClientMsg) {
     log.Println(msg.cl.name, "disconnected"+msg.reason)
 }
 
-func listen(cs chan<- core.ServiceMsg, protocol string, address string) {
+func listen(cs chan<- core.ServiceMsg, protocol string, address string, shutdown chan bool) {
     l, err := net.Listen(protocol, address)
     if err != nil {
         log.Println("Error listening:", err)
@@ -90,15 +114,28 @@ func listen(cs chan<- core.ServiceMsg, protocol string, address string) {
     }
     defer l.Close()
 
-    for { // TODO: Need to be able to shutdown the server remotely
-        conn, err := l.Accept()
-        if err == os.EINVAL {
-            return // socket was closed
-        } else if err != nil {
-            log.Println("Error accepting connection:", err)
-            continue
+    accepted := make(chan net.Conn)
+    go func() {
+        for {
+            conn, err := l.Accept()
+            if err == os.EINVAL {
+                return // socket was closed
+            } else if err != nil {
+                log.Println("Error accepting connection:", err)
+                continue
+            }
+
+            accepted <- conn
         }
-        go connect(cs, conn)
+    }()
+
+    for {
+        select {
+        case conn := <-accepted:
+            go connect(cs, conn)
+        case <-shutdown:
+            return
+        }
     }
 }
 

@@ -8,86 +8,151 @@ import (
     "testing"
     "net"
     "time"
-    "os"
     "protocol/protocol"
     "core/core"
     "goprotobuf.googlecode.com/hg/proto"
 )
 
-// Tests the connection handshake
-func TestConnect(t *testing.T) {
+func startServer(t *testing.T) (svc *CommService, cs chan core.ServiceMsg) {
     // Start new service on port 9190
-    svc := NewCommService(":9190")
-    cs := make(chan core.ServiceMsg)
+    svc = NewCommService(":9190")
+    cs = make(chan core.ServiceMsg)
     go svc.Run(cs)
     // Give time for the service to start listening
     time.Sleep(1e8) // 100 ms
+    return svc, cs
+}
 
-    // Create protocol buffer to initiate connection
-    connect := &protocol.Connect{proto.Uint32(ProtocolVersion), nil, nil}
-    msg := &protocol.Message{Connect: connect,
-        Type: protocol.NewMessage_Type(protocol.Message_CONNECT)}
-
+func newTestClient(t *testing.T) (fd net.Conn) {
     // Connect to the listening service and send
     fd, err := net.Dial("tcp", "", "localhost:9190")
     if err != nil {
         t.Fatalf("Could not connect to comm:", err)
     }
-    // Recover from any panics from sending/receiving and print the error
-    failure := "Error sending connect message:"
-    defer func() {
-        if e := recover(); e != nil {
-            if err, ok := e.(os.Error); ok {
-                t.Fatalf(failure + err.String())
-            } else {
-                t.Fatalf(failure)
-            }
-            fd.Close()
-        }
-    }()
-    sendMessage(fd, msg)
 
     // Wait 1s to read a reply
     fd.SetReadTimeout(1e9) // 1s
-    failure = "Connect message not received:"
+    return
+}
+
+// Do the connection handshake
+func connectClient(t *testing.T, fd net.Conn) {
+    // Recover from any panics sent by {send,read}Msg() and print the error
+    failure := "Error sending connect message"
+    defer func() {
+        if e := recover(); e != nil {
+            t.Fatalf("%s: %v", failure, e)
+            fd.Close()
+        }
+    }()
+
+    // Create protocol buffer to initiate connection
+    connect := &protocol.Connect{proto.Uint32(ProtocolVersion), nil, nil}
+    msg := &protocol.Message{Connect: connect,
+        Type: protocol.NewMessage_Type(protocol.Message_CONNECT)}
+    sendMessage(fd, msg)
+
+    failure = "Connect message not received"
     msg, ok := readMessage(fd)
     if !ok || msg.Connect == nil {
-        t.Fatalf("Connect message not received!")
+        t.Fatalf(failure)
     }
     reply_pb := msg.Connect
 
     // Since the client and server are running the same code, the version
     // strings should be exact
     if *reply_pb.Version != *connect.Version {
-        t.Error("Version strings do not match!")
+        t.Fatalf("Version strings do not match")
     }
 
     // Send login message
+    failure = "Error sending login message"
     login := &protocol.Login{Name: proto.String("TestPlayer")}
     msg = &protocol.Message{Login: login,
         Type: protocol.NewMessage_Type(protocol.Message_LOGIN)}
-    failure = "Error sending login message:"
     sendMessage(fd, msg)
 
     // Read login result message
-    failure = "Login result message not received:"
+    failure = "Login result message not received"
     msg, ok = readMessage(fd)
     if !ok || msg.LoginResult == nil {
-        t.Fatalf("Login result message not received!")
+        t.Fatalf(failure)
     }
     result := msg.LoginResult
     if *result.Succeeded != true {
         t.Fatalf("Login failed!")
     }
+}
+
+// Tests the connection handshake
+func TestConnect(t *testing.T) {
+    _, cs := startServer(t)
+    fd := newTestClient(t)
+
+    // Do connect/login handshake
+    connectClient(t, fd)
 
     // Send disconnect
-    failure = "Sending disconnect:"
+    failure := "Error sending disconnect"
+    serviceClosed := false
+    defer func() {
+        if e := recover(); e != nil {
+            t.Fatalf("%s: %v", failure, e)
+            fd.Close()
+        }
+
+        if !serviceClosed {
+            cs <- ShutdownServerMsg{}
+        }
+    }()
     disconn := &protocol.Disconnect{protocol.NewDisconnect_Reason(protocol.Disconnect_QUIT),
         proto.String("Test finished"), nil}
-    msg = &protocol.Message{Disconnect: disconn,
+    msg := &protocol.Message{Disconnect: disconn,
         Type: protocol.NewMessage_Type(protocol.Message_DISCONNECT)}
     sendMessage(fd, msg)
 
     fd.Close()
-    time.Sleep(1e6) // 1 ms, give time for disconnect to process
+
+    time.Sleep(1e7) // 10 ms, give time for disconnect to process
+}
+
+func TestServerQuit(t *testing.T) {
+    svc, cs := startServer(t)
+
+    fd := newTestClient(t)
+    connectClient(t, fd)
+
+    cs <- ShutdownServerMsg{}
+    time.Sleep(1e7) // Block thread 10ms to let the server respond
+    for _, cl := range svc.clients {
+        if cl != nil {
+            t.Fatalf("Client not removed from server list")
+        }
+    }
+
+    errMsg := make(chan string)
+    go func() {
+        if _, err := fd.Read(make([]byte, 10)); err == nil {
+            errMsg <- "Client connection not closed"
+        } else {
+            errMsg <- ""
+        }
+    }()
+    go func() {
+        // if the socket is open, the Read might block
+        time.Sleep(1e8) // 100ms
+        errMsg <- "Client connection not closed after 100ms"
+    }()
+    if err := <-errMsg; err != "" {
+        t.Fatalf(err)
+    }
+
+    go func() {
+        _, err := net.Dial("tcp", "", "localhost:9190")
+        if err == nil {
+            t.Fatalf("Server didn't shut down")
+        }
+    }()
+
+    time.Sleep(1e8) // Wait 100ms to make sure we can't connect
 }
