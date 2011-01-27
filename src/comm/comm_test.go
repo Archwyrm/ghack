@@ -116,10 +116,8 @@ func TestServerQuit(t *testing.T) {
 
     cs <- ShutdownServerMsg{}
     time.Sleep(1e7) // Block thread 10ms to let the server respond
-    for _, cl := range svc.clients {
-        if cl != nil {
-            t.Fatalf("Client not removed from server list")
-        }
+    if len(svc.clients) > 0 {
+        t.Fatalf("Client not removed from server list")
     }
 
     errMsg := make(chan string)

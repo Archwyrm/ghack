@@ -53,7 +53,7 @@ type CommService struct {
 }
 
 func NewCommService(address string) *CommService {
-    return &CommService{make([]*client, 5), address}
+    return &CommService{make([]*client, 0, 5), address}
 }
 
 func (cs *CommService) Run(input chan core.ServiceMsg) {
@@ -78,16 +78,11 @@ func (cs *CommService) Run(input chan core.ServiceMsg) {
 
 func (cs *CommService) removeAllClients() {
     log.Println("Shutting down server")
-    num_clients := len(cs.clients)
     for _, cl := range cs.clients {
-        if cl == nil {
-            continue
-        }
-
         cl.conn.Close()
     }
 
-    cs.clients = make([]*client, num_clients)
+    cs.clients = make([]*client, 0)
 }
 
 func (cs *CommService) removeClient(msg removeClientMsg) {
