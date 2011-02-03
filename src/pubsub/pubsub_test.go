@@ -1,4 +1,4 @@
-// Copyright 2010 The ghack Authors. All rights reserved.
+// Copyright 2010, 2011 The ghack Authors. All rights reserved.
 // Use of this source code is governed by the GNU General Public License
 // version 3 (or any later version). See the file COPYING for details.
 
@@ -81,7 +81,7 @@ func TestUnsubscribe(t *testing.T) {
 }
 
 // Relay proper messages to pubsub for testing purposes
-func startRelay(ps chan core.ServiceMsg, topic string) (relay chan interface{}) {
+func startRelay(ps chan core.Msg, topic string) (relay chan interface{}) {
     relay = make(chan interface{})
     go func() {
         for {
@@ -92,7 +92,7 @@ func startRelay(ps chan core.ServiceMsg, topic string) (relay chan interface{}) 
 }
 
 // Makes 'count' channels and subscribes them
-func makeAndSubscribe(ps chan core.ServiceMsg, topic string, count int) (chans []chan interface{}) {
+func makeAndSubscribe(ps chan core.Msg, topic string, count int) (chans []chan interface{}) {
     for i := 0; i < count; i++ {
         ch := make(chan interface{})
         ps <- pubsub.SubscribeMsg{topic, ch}
@@ -113,9 +113,9 @@ func makeRecvEvents(chans []chan interface{}, pre []*script.Event, data interfac
 }
 
 // Starts the PubSub in a goroutine and returns a channel to it
-func startPubSub() (ps chan core.ServiceMsg) {
+func startPubSub() (ps chan core.Msg) {
     psObj := pubsub.NewPubSub()
-    ps = make(chan core.ServiceMsg)
+    ps = make(chan core.Msg)
     go psObj.Run(ps)
     return
 }

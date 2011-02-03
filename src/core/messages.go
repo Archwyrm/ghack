@@ -6,18 +6,16 @@ package core
 
 import (
     "cmpId/cmpId"
-    "msgId/msgId"
 )
 
-// Interface for requesting a component to do something
-type CmpMsg interface {
-    Id() int
-}
+// Universal message interface for components and services.
+// Does not currently do anything special, but is reserved for any possible
+// future use and thus should be specified where any other actual message
+// types are expected.
+type Msg interface{}
 
 // Message to update
 type MsgTick struct{}
-
-func (msg MsgTick) Id() int { return msgId.Tick }
 
 // Message requesting a certain state to be returned
 // Contains a channel where the reply should be sent
@@ -26,11 +24,7 @@ type MsgGetState struct {
     StateReply chan State
 }
 
-func (msg MsgGetState) Id() int { return msgId.GetState }
-
 // Message to add an action that contains the action to be added
 type MsgAddAction struct {
     Action Action
 }
-
-func (msg MsgAddAction) Id() int { return msgId.AddAction }

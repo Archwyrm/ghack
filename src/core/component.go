@@ -60,7 +60,7 @@ type CmpData struct {
     // Use maps for easy/add remove for now
     states  StateList
     actions ActionList
-    input   chan CmpMsg
+    input   chan Msg
 }
 
 // Creates a CmpData and initializes its containers.
@@ -99,7 +99,7 @@ func (cd *CmpData) RemoveAction(action Action) {
 }
 
 // Main loop which handles all component tasks.
-func (cd *CmpData) Run(input chan CmpMsg) {
+func (cd *CmpData) Run(input chan Msg) {
     cd.input = input
 
     for {

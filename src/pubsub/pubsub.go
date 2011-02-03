@@ -1,4 +1,4 @@
-// Copyright 2010 The ghack Authors. All rights reserved.
+// Copyright 2010, 2011 The ghack Authors. All rights reserved.
 // Use of this source code is governed by the GNU General Public License
 // version 3 (or any later version). See the file COPYING for details.
 
@@ -19,15 +19,11 @@ type PublishMsg struct {
     Data  interface{}
 }
 
-func (x PublishMsg) Name() string { return "PublishMsg" }
-
 // Message to setup a subscription to a given topic
 type SubscribeMsg struct {
     Topic     string
     ReplyChan chan interface{}
 }
-
-func (x SubscribeMsg) Name() string { return "SubscribeMsg" }
 
 // Message to remove a subscription to a given topic
 // ReplyChan is to identify the subscriber
@@ -35,8 +31,6 @@ type UnsubscribeMsg struct {
     Topic     string
     ReplyChan chan interface{}
 }
-
-func (x UnsubscribeMsg) Name() string { return "UnsubscribeMsg" }
 
 // Publish/Subscribe struct
 type PubSub struct {
@@ -49,7 +43,7 @@ func NewPubSub() *PubSub {
 }
 
 // Starts a loop to receive and handle messages from the passed channel
-func (ps *PubSub) Run(input chan core.ServiceMsg) {
+func (ps *PubSub) Run(input chan core.Msg) {
     for {
         msg := <-input
 

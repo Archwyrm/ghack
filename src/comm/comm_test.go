@@ -12,10 +12,10 @@ import (
     "core/core"
 )
 
-func startServer(t *testing.T) (svc *CommService, cs chan core.ServiceMsg) {
+func startServer(t *testing.T) (svc *CommService, cs chan core.Msg) {
     // Start new service on port 9190
     svc = NewCommService(":9190")
-    cs = make(chan core.ServiceMsg)
+    cs = make(chan core.Msg)
     go svc.Run(cs)
     // Give time for the service to start listening
     time.Sleep(1e8) // 100 ms

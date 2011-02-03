@@ -28,7 +28,7 @@ func (g Game) GameLoop() {
 
     player := NewPlayer()
     entities.Entities[player.Name()] = player
-    playerChan := make(chan core.CmpMsg)
+    playerChan := make(chan core.Msg)
     go player.Run(playerChan)
 
     msg := core.MsgAddAction{&Move{1, 1}}

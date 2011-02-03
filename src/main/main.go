@@ -1,4 +1,4 @@
-// Copyright 2010 The ghack Authors. All rights reserved.
+// Copyright 2010, 2011 The ghack Authors. All rights reserved.
 // Use of this source code is governed by the GNU General Public License
 // version 3 (or any later version). See the file COPYING for details.
 
@@ -15,7 +15,7 @@ func main() {
     fmt.Printf("Game started\n")
 
     svc := comm.NewCommService(":9190")
-    go svc.Run(make(chan core.ServiceMsg))
+    go svc.Run(make(chan core.Msg))
 
     game := NewGame()
     game.GameLoop()

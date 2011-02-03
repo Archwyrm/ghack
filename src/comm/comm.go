@@ -33,19 +33,13 @@ type addClientMsg struct {
     cl *client
 }
 
-func (x addClientMsg) Name() string { return "addClientMsg" }
-
 type removeClientMsg struct {
     cl     *client
     reason string
 }
 
-func (x removeClientMsg) Name() string { return "addClientMsg" }
-
 // Message to shut the server down gracefully
 type ShutdownServerMsg struct{}
-
-func (msg ShutdownServerMsg) Name() string { return "ShutdownServerMsg" }
 
 type CommService struct {
     clients []*client
@@ -56,7 +50,7 @@ func NewCommService(address string) *CommService {
     return &CommService{make([]*client, 0, 5), address}
 }
 
-func (cs *CommService) Run(input chan core.ServiceMsg) {
+func (cs *CommService) Run(input chan core.Msg) {
     shutdown := make(chan bool)
     go listen(input, "tcp", cs.address, shutdown)
 
@@ -99,7 +93,7 @@ func (cs *CommService) removeClient(msg removeClientMsg) {
     log.Println(msg.cl.name, "disconnected"+msg.reason)
 }
 
-func listen(cs chan<- core.ServiceMsg, protocol string, address string, shutdown chan bool) {
+func listen(cs chan<- core.Msg, protocol string, address string, shutdown chan bool) {
     l, err := net.Listen(protocol, address)
     if err != nil {
         log.Println("Error listening:", err)
@@ -134,7 +128,7 @@ func listen(cs chan<- core.ServiceMsg, protocol string, address string, shutdown
     }
 }
 
-func connect(cs chan<- core.ServiceMsg, conn net.Conn) {
+func connect(cs chan<- core.Msg, conn net.Conn) {
     defer logAndClose(conn)
 
     // Read connect message
@@ -250,13 +244,13 @@ func prependByteLength(data []byte) ([]byte, os.Error) {
 type client struct {
     name        string
     conn        net.Conn
-    SendQueue   chan core.ServiceMsg
+    SendQueue   chan core.Msg
     permissions uint32
 }
 
 // Create a new client and start up send/receive goroutines.
-func newClient(cs chan<- core.ServiceMsg, conn net.Conn, l *protocol.Login) *client {
-    ch := make(chan core.ServiceMsg)
+func newClient(cs chan<- core.Msg, conn net.Conn, l *protocol.Login) *client {
+    ch := make(chan core.Msg)
     cl := &client{*l.Name, conn, ch, proto.GetUint32(l.Permissions)}
     go cl.RecvLoop(cs)
     go cl.SendLoop()
@@ -264,7 +258,7 @@ func newClient(cs chan<- core.ServiceMsg, conn net.Conn, l *protocol.Login) *cli
 }
 
 // Receives messages from remote client and acts upon them if appropriate.
-func (cl *client) RecvLoop(cs chan<- core.ServiceMsg) {
+func (cl *client) RecvLoop(cs chan<- core.Msg) {
     defer logAndClose(cl.conn)
     for {
         msg, ok := readMessage(cl.conn)
