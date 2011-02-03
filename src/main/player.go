@@ -14,6 +14,6 @@ type Player struct {
     *core.CmpData
 }
 
-func (p Player) Id() cmpId.EntityId { return cmpId.Player }
-func (p Player) Name() string       { return "Player" }
-func NewPlayer() *Player            { return &Player{core.NewCmpData()} }
+func (p Player) Id() core.EntityId { return cmpId.Player }
+func (p Player) Name() string      { return "Player" }
+func NewPlayer() *Player           { return &Player{core.NewCmpData()} }

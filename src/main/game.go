@@ -16,9 +16,9 @@ type Game struct {
     *core.CmpData
 }
 
-func (g Game) Id() int      { return cmpId.Game }
-func (g Game) Name() string { return "Game" }
-func NewGame() *Game        { return &Game{core.NewCmpData()} }
+func (g Game) Id() core.EntityId { return cmpId.Game }
+func (g Game) Name() string      { return "Game" }
+func NewGame() *Game             { return &Game{core.NewCmpData()} }
 
 // TODO: Move functionality to an Init Action
 func (g Game) GameLoop() {

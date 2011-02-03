@@ -6,16 +6,19 @@
 
 package core
 
-import (
-    "cmpId/cmpId"
-)
+// Identifies a single state type
+type StateId int
+// Identifies a single action type
+type ActionId int
+// Identifies a single entity type
+type EntityId int
 
 // Holds some kind of state data for a particular named property of an Entity.
 // Id() returns a unique ID for each Action (defined in cmpId package)
 // Name() returns a unique and semi-descriptive name for each Action (defined
 // by each Entity)
 type State interface {
-    Id() cmpId.StateId
+    Id() StateId
     Name() string
 }
 
@@ -25,7 +28,7 @@ type State interface {
 // Name() returns a unique and semi-descriptive name for each Action (defined
 // by each Entity)
 type Action interface {
-    Id() cmpId.ActionId
+    Id() ActionId
     Name() string
     Act(ent Entity)
 }
@@ -41,7 +44,7 @@ type Action interface {
 // AddAction() adds the Action to the Entity.
 // RemoveAction() removes the Action from the Entity.
 type Entity interface {
-    Id() cmpId.EntityId
+    Id() EntityId
     Name() string
     GetState(state State) State
     SetState(state State)
@@ -50,9 +53,9 @@ type Entity interface {
 }
 
 // Simplified declaration
-type StateList map[cmpId.StateId]State
+type StateList map[StateId]State
 // Simplified declaration
-type ActionList map[cmpId.ActionId]Action
+type ActionList map[ActionId]Action
 
 // Contains all the data that each component needs.
 // TODO: Rename to 'Component'?
@@ -71,7 +74,7 @@ func NewCmpData() *CmpData {
 }
 
 // Added to satisfy the Entity interface, clobbered by embedding.
-func (cd CmpData) Id() cmpId.EntityId { return 0 }
+func (cd CmpData) Id() EntityId { return 0 }
 // Added to satisfy the Entity interface, clobbered by embedding.
 func (cd CmpData) Name() string { return "CmpData" }
 
@@ -128,6 +131,6 @@ func (cd *CmpData) update() {
 
 // Send back the requested State on the provided channel
 func (cd *CmpData) sendState(msg MsgGetState) {
-    state := cd.states[msg.StateId]
+    state := cd.states[msg.Id]
     msg.StateReply <- state
 }

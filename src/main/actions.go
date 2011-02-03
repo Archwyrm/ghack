@@ -15,7 +15,7 @@ type AddEntity struct {
     newEntity core.Entity
 }
 
-func (a AddEntity) Id() cmpId.ActionId              { return cmpId.AddEntity }
+func (a AddEntity) Id() core.ActionId               { return cmpId.AddEntity }
 func (a AddEntity) Name() string                    { return "AddEntity" }
 func NewAddEntity(newEntity core.Entity) *AddEntity { return &AddEntity{newEntity} }
 
@@ -31,8 +31,8 @@ type Move struct {
     DirY int
 }
 
-func (a Move) Id() cmpId.ActionId { return cmpId.Move }
-func (a Move) Name() string       { return "Move" }
+func (a Move) Id() core.ActionId { return cmpId.Move }
+func (a Move) Name() string      { return "Move" }
 
 // Modifies the Position of an Entity with the passed Move vector.
 func (a Move) Act(ent core.Entity) {

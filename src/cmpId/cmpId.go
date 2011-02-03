@@ -1,4 +1,4 @@
-// Copyright 2010 The ghack Authors. All rights reserved.
+// Copyright 2010, 2011 The ghack Authors. All rights reserved.
 // Use of this source code is governed by the GNU General Public License
 // version 3 (or any later version). See the file COPYING for details.
 
@@ -6,24 +6,21 @@
 // in bookkeeping.
 package cmpId
 
-type StateId int
-
+// States
 const (
     State = iota
     EntityList
     Position
 )
 
-type ActionId int
-
+// Actions
 const (
     Action = iota
     AddEntity
     Move
 )
 
-type EntityId int
-
+// Entities
 const (
     Entity = iota
     Game

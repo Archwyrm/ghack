@@ -4,10 +4,6 @@
 
 package core
 
-import (
-    "cmpId/cmpId"
-)
-
 // Universal message interface for components and services.
 // Does not currently do anything special, but is reserved for any possible
 // future use and thus should be specified where any other actual message
@@ -20,7 +16,7 @@ type MsgTick struct{}
 // Message requesting a certain state to be returned
 // Contains a channel where the reply should be sent
 type MsgGetState struct {
-    StateId    cmpId.StateId
+    Id         StateId
     StateReply chan State
 }
 
