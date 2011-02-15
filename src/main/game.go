@@ -13,12 +13,15 @@ import (
 
 // The core of the game
 type Game struct {
+    svc core.ServiceContext
     *core.CmpData
 }
 
 func (g Game) Id() core.EntityId { return cmpId.Game }
 func (g Game) Name() string      { return "Game" }
-func NewGame() *Game             { return &Game{core.NewCmpData()} }
+func NewGame(svc core.ServiceContext) *Game {
+    return &Game{svc, core.NewCmpData()}
+}
 
 // TODO: Move functionality to an Init Action
 func (g Game) GameLoop() {

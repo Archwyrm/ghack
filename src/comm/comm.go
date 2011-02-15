@@ -42,12 +42,13 @@ type removeClientMsg struct {
 type ShutdownServerMsg struct{}
 
 type CommService struct {
+    svc     core.ServiceContext
     clients []*client
     address string
 }
 
-func NewCommService(address string) *CommService {
-    return &CommService{make([]*client, 0, 5), address}
+func NewCommService(svc core.ServiceContext, address string) *CommService {
+    return &CommService{svc, make([]*client, 0, 5), address}
 }
 
 func (cs *CommService) Run(input chan core.Msg) {

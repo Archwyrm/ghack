@@ -14,7 +14,7 @@ import (
 
 func startServer(t *testing.T) (svc *CommService, cs chan core.Msg) {
     // Start new service on port 9190
-    svc = NewCommService(":9190")
+    svc = NewCommService(core.NewServiceContext(), ":9190")
     cs = make(chan core.Msg)
     go svc.Run(cs)
     // Give time for the service to start listening

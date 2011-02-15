@@ -9,15 +9,18 @@ import (
     "fmt"
     "core/core"
     "comm/comm"
+    "pubsub/pubsub"
 )
 
 func main() {
     fmt.Printf("Game started\n")
 
-    svc := comm.NewCommService(":9190")
-    go svc.Run(make(chan core.Msg))
+    svc := core.NewServiceContext()
 
-    game := NewGame()
+    go comm.NewCommService(svc, ":9190").Run(svc.Comm)
+    go pubsub.NewPubSub().Run(svc.PubSub)
+
+    game := NewGame(svc)
     game.GameLoop()
 
     fmt.Printf("Exiting\n")
