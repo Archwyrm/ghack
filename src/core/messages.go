@@ -20,7 +20,22 @@ type MsgGetState struct {
     StateReply chan State
 }
 
+// Message requesting all states that an entity has
+// StateReply will be ranged over by the originator of request
+type MsgGetAllStates struct {
+    StateReply chan State
+}
+
 // Message to add an action that contains the action to be added
 type MsgAddAction struct {
     Action Action
+}
+
+// Requests and returns a list of entity handles (channels) and types.
+// Message with an empty list is considered a request, while non-empty contains
+// an actual list. Each pair has matching indices in their respective slices.
+type MsgListEntities struct {
+    Reply    chan Msg // Channel to reply on
+    Entities []chan Msg
+    Types    []EntityId
 }

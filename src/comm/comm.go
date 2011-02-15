@@ -53,7 +53,7 @@ func NewCommService(svc core.ServiceContext, address string) *CommService {
 
 func (cs *CommService) Run(input chan core.Msg) {
     shutdown := make(chan bool)
-    go listen(input, "tcp", cs.address, shutdown)
+    go listen(cs.svc, input, "tcp", cs.address, shutdown)
 
     for {
         msg := <-input
@@ -94,7 +94,8 @@ func (cs *CommService) removeClient(msg removeClientMsg) {
     log.Println(msg.cl.name, "disconnected"+msg.reason)
 }
 
-func listen(cs chan<- core.Msg, protocol string, address string, shutdown chan bool) {
+func listen(svc core.ServiceContext, cs chan<- core.Msg, protocol string,
+address string, shutdown chan bool) {
     l, err := net.Listen(protocol, address)
     if err != nil {
         log.Println("Error listening:", err)
@@ -122,14 +123,14 @@ func listen(cs chan<- core.Msg, protocol string, address string, shutdown chan b
     for {
         select {
         case conn := <-accepted:
-            go connect(cs, conn)
+            go connect(svc, cs, conn)
         case <-shutdown:
             return
         }
     }
 }
 
-func connect(cs chan<- core.Msg, conn net.Conn) {
+func connect(svc core.ServiceContext, cs chan<- core.Msg, conn net.Conn) {
     defer logAndClose(conn)
 
     // Read connect message
@@ -162,7 +163,7 @@ func connect(cs chan<- core.Msg, conn net.Conn) {
     msg = makeLoginResult(true, 0)
     sendMessage(conn, msg)
 
-    cs <- addClientMsg{newClient(cs, conn, login)}
+    cs <- addClientMsg{newClient(svc, cs, conn, login)}
 }
 
 // Recovers from fatal errors, logs them, and closes the connection
@@ -247,12 +248,15 @@ type client struct {
     conn        net.Conn
     SendQueue   chan core.Msg
     permissions uint32
+    observer    chan core.Msg
 }
 
 // Create a new client and start up send/receive goroutines.
-func newClient(cs chan<- core.Msg, conn net.Conn, l *protocol.Login) *client {
+func newClient(svc core.ServiceContext, cs chan<- core.Msg, conn net.Conn,
+l *protocol.Login) *client {
     ch := make(chan core.Msg)
-    cl := &client{*l.Name, conn, ch, proto.GetUint32(l.Permissions)}
+    obs := createObserver(svc, ch)
+    cl := &client{*l.Name, conn, ch, proto.GetUint32(l.Permissions), obs}
     go cl.RecvLoop(cs)
     go cl.SendLoop()
     return cl

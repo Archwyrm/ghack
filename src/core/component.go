@@ -112,10 +112,10 @@ func (cd *CmpData) Run(input chan Msg) {
         switch m := msg.(type) {
         case MsgTick:
             cd.update()
-
         case MsgGetState:
             cd.sendState(m)
-
+        case MsgGetAllStates:
+            cd.sendAllStates(m)
         case MsgAddAction:
             cd.AddAction(m.Action)
         }
@@ -133,4 +133,11 @@ func (cd *CmpData) update() {
 func (cd *CmpData) sendState(msg MsgGetState) {
     state := cd.states[msg.Id]
     msg.StateReply <- state
+}
+
+// Send back all states on the provided channel
+func (cd *CmpData) sendAllStates(msg MsgGetAllStates) {
+    for _, v := range cd.states {
+        msg.StateReply <- v
+    }
 }

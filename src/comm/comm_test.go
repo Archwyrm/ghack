@@ -12,10 +12,17 @@ import (
     "core/core"
 )
 
+// Starts the server with a default ServiceContext for tests that don't need it
 func startServer(t *testing.T) (svc *CommService, cs chan core.Msg) {
+    return startServerWithCtx(t, core.NewServiceContext())
+}
+
+// Starts the server with a user specificied ServiceContext
+func startServerWithCtx(t *testing.T,
+ctx core.ServiceContext) (svc *CommService, cs chan core.Msg) {
     // Start new service on port 9190
-    svc = NewCommService(core.NewServiceContext(), ":9190")
-    cs = make(chan core.Msg)
+    svc = NewCommService(ctx, ":9190")
+    cs = ctx.Comm
     go svc.Run(cs)
     // Give time for the service to start listening
     time.Sleep(1e8) // 100 ms
