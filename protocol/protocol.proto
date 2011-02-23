@@ -120,6 +120,9 @@ message AddEntity {
     optional string name = 2; // Entity type for any special handling
 }
 
+// Remove a given entity, no more updates for this entity will be sent. If the
+// entity has not been added, this message may be ignored, but it is considered
+// a minor error for this to happen.
 message RemoveEntity {
     required int32 id = 1; // Unique identifier for the entity
     optional string name = 2; // Entity type for any special handling
@@ -127,6 +130,8 @@ message RemoveEntity {
 
 // Update a given state to a certain value
 // If the value is missing, remove the state
+// An AddEntity message must have already been sent before UpdateState for any
+// entity is valid. It is a minor error otherwise.
 message UpdateState {
     required int32 id = 1; // Unique identifier for the owner entity
     required string state_id = 2; // Name of the state to update
