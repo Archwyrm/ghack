@@ -287,8 +287,14 @@ func (cl *client) SendLoop() {
         if msg == nil && closed(cl.SendQueue) {
             return
         }
-        switch msg.(type) {
-        // TODO: Handle messages in the send queue
+        switch m := msg.(type) {
+        case MsgAddEntity:
+            sendMessage(cl.conn, makeAddEntity(m.Id, m.Name))
+        case MsgRemoveEntity:
+            sendMessage(cl.conn, makeRemoveEntity(m.Id, m.Name))
+        case MsgUpdateState:
+            value := packState(m.State)
+            sendMessage(cl.conn, makeUpdateState(m.Id, m.State.Name(), value))
         }
     }
 }

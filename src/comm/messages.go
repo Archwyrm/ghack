@@ -5,6 +5,8 @@
 package comm
 
 import (
+    "reflect"
+    "core/core"
     "protocol/protocol"
     "goprotobuf.googlecode.com/hg/proto"
 )
@@ -91,4 +93,38 @@ func makeUpdateState(id int32, stateId string, value *protocol.StateValue) (msg 
         UpdateState: updateState,
         Type:        protocol.NewMessage_Type(protocol.Message_UPDATESTATE),
     }
+}
+
+// Creates the right type of StateValue message for an arbitrary State type.
+func packState(state core.State) *protocol.StateValue {
+    msg := &protocol.StateValue{} // Init message
+    t := reflect.NewValue(state)
+    state_v, ok := t.(*reflect.StructValue)
+    if !ok {
+        panic("State is non-struct type!")
+    }
+    if state_v.NumField() > 1 {
+        panic("Protocol only supports states with one field currently")
+    }
+    // TODO: Add support for state structs with more than one field
+    val := state_v.Field(0)
+    switch f := val.(type) {
+    case *reflect.BoolValue:
+        msg.Type = protocol.NewStateValue_Type(protocol.StateValue_BOOL)
+        msg.BoolVal = proto.Bool(f.Get())
+    case *reflect.IntValue:
+        msg.Type = protocol.NewStateValue_Type(protocol.StateValue_INT)
+        msg.IntVal = proto.Int(int(f.Get()))
+    case *reflect.FloatValue:
+        msg.Type = protocol.NewStateValue_Type(protocol.StateValue_FLOAT)
+        msg.FloatVal = proto.Float32(float32(f.Get()))
+    case *reflect.StringValue:
+        msg.Type = protocol.NewStateValue_Type(protocol.StateValue_STRING)
+        msg.StringVal = proto.String(f.Get())
+    case *reflect.SliceValue:
+        //TODO: Implement repeated values
+    default:
+        panic("State value not supported:" + val.Type().String())
+    }
+    return msg
 }

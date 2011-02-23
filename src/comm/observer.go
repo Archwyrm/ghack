@@ -15,19 +15,19 @@ import (
 
 // Signal that an entity should be sent to a client
 type MsgAddEntity struct {
-    Id   int // Unique Id
+    Id   int32 // Unique Id
     Name string
 }
 
 // Signal that an entity should be removed from a client
 type MsgRemoveEntity struct {
-    Id   int // Unique Id
+    Id   int32 // Unique Id
     Name string
 }
 
 // Signal that a state should have its value updated on a client
 type MsgUpdateState struct {
-    Id    int        // Unique Id
+    Id    int32      // Unique Id
     State core.State // Contains Name and Value needed for protocol
 }
 
