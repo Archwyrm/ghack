@@ -31,11 +31,13 @@ type MsgAddAction struct {
     Action Action
 }
 
-// Requests and returns a list of entity handles (channels) and types.
+// Requests and returns a list of entity handles (channels), types, and names.
 // Message with an empty list is considered a request, while non-empty contains
-// an actual list. Each pair has matching indices in their respective slices.
+// an actual list. Each triple of lists has matching indices in their respective
+// slices.
 type MsgListEntities struct {
     Reply    chan Msg // Channel to reply on
     Entities []chan Msg
     Types    []EntityId
+    Names    []string
 }

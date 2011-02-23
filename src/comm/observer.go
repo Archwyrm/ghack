@@ -27,7 +27,7 @@ type MsgRemoveEntity struct {
 
 // Signal that a state should have its value updated on a client
 type MsgUpdateState struct {
-    Id    int // Unique Id
+    Id    int        // Unique Id
     State core.State // Contains Name and Value needed for protocol
 }
 
@@ -40,7 +40,7 @@ type observer struct {
     // Maps the entity to its view's control channel
     views map[chan core.Msg]chan core.Msg
     // Channel to control this observer
-    ctrl  chan core.Msg
+    ctrl chan core.Msg
 }
 
 // Creates an observer instance in a new goroutine and returns a control channel
@@ -55,7 +55,7 @@ func createObserver(svc core.ServiceContext, client chan core.Msg) chan core.Msg
 func (obs *observer) init() {
     // Get list of entities for initial sync
     reply := make(chan core.Msg)
-    obs.svc.Game <- core.MsgListEntities{reply, nil, nil}
+    obs.svc.Game <- core.MsgListEntities{reply, nil, nil, nil}
     list, ok := (<-reply).(core.MsgListEntities)
     if !ok {
         panic("Request received incorrect reply")
@@ -64,7 +64,7 @@ func (obs *observer) init() {
         if checkBlacklist(list.Types[i]) {
             continue
         }
-        obs.addView(list.Entities[i])
+        obs.addView(list.Entities[i], list.Names[i])
     }
 }
 
@@ -80,7 +80,8 @@ func (obs *observer) observe() {
 }
 
 // Creates a new view and starts it replicating
-func (obs *observer) addView(entity chan core.Msg) {
+func (obs *observer) addView(entity chan core.Msg, entName string) {
+    obs.client <- MsgAddEntity{0, entName} // TODO: Get the id
     v := &view{client: obs.client, entity: entity}
     v_ch := make(chan core.Msg)
     obs.views[entity] = v_ch

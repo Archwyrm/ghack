@@ -33,13 +33,19 @@ func (x testState) Name() string     { return "TestState" }
 func TestObserver(t *testing.T) {
     svc := core.NewServiceContext()
     ent, ent_ch := createTestEntity(1)
-    go gameEmulator(t, svc, ent_ch, ent.Id())
+    go gameEmulator(t, svc, ent_ch, ent.Id(), ent.Name())
     go pubsubEmulator(t, svc)
     client := make(chan core.Msg)
     obs := createObserver(svc, client)
 
-    // Expecting one state update
+    // Expecting one entity added
     msg := getMessage(t, client)
+    if _, ok := msg.(MsgAddEntity); !ok {
+        t.Fatal("No entity added")
+    }
+
+    // Expecting one state update
+    msg = getMessage(t, client)
     if m, ok := msg.(MsgUpdateState); !ok {
         t.Fatal("No state update received")
     } else {
@@ -80,7 +86,7 @@ func createTestEntity(value int) (core.Entity, chan core.Msg) {
 
 // Masquerades as a game entity for testing purposes
 func gameEmulator(t *testing.T, svc core.ServiceContext, testEnt chan core.Msg,
-testId core.EntityId) {
+testId core.EntityId, testName string) {
     list, ok := (<-svc.Game).(core.MsgListEntities)
     if !ok {
         t.Fatal("Unexpected message sent to game service")
@@ -88,7 +94,8 @@ testId core.EntityId) {
 
     list.Reply <- core.MsgListEntities{nil,
         []chan core.Msg{testEnt},
-        []core.EntityId{testId}}
+        []core.EntityId{testId},
+        []string{testName}}
 }
 
 // Masquerades as a pubsub service for testing purposes
