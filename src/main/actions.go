@@ -9,22 +9,6 @@ import (
     "cmpId/cmpId"
 )
 
-// Adds the passed Entity to an Entity's EntityList. Used by Game to
-// populate its list.
-type AddEntity struct {
-    newEntity core.Entity
-}
-
-func (a AddEntity) Id() core.ActionId               { return cmpId.AddEntity }
-func (a AddEntity) Name() string                    { return "AddEntity" }
-func NewAddEntity(newEntity core.Entity) *AddEntity { return &AddEntity{newEntity} }
-
-func (a AddEntity) Act(ent core.Entity) {
-    var list EntityList
-    list = ent.GetState(list).(EntityList)
-    list.Entities[a.newEntity.Name()] = a.newEntity
-}
-
 // Simple movement.
 type Move struct {
     DirX int
