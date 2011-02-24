@@ -67,6 +67,10 @@ func (cs *CommService) Run(input chan core.Msg) {
             shutdown <- true      // stop listening first so we don't
             cs.removeAllClients() // add any more clients
             return
+        case core.MsgTick: // Client state should be updated
+            for _, cl := range cs.clients {
+                cl.observer <- m
+            }
         }
     }
 }

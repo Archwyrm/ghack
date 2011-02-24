@@ -66,6 +66,7 @@ func (g Game) GameLoop() {
             }
         }
 update_end:
+        g.svc.Comm <- core.MsgTick{g.svc.Game}
 
         // Just a little output for debugging
         playerChan <- msg2

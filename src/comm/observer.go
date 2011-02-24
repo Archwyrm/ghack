@@ -72,10 +72,17 @@ func (obs *observer) observe() {
     obs.init()
     // TODO: Listen for entities added or removed
     for {
-        <-obs.ctrl // Just block on control chan for now
+        msg := <-obs.ctrl
+        switch m := msg.(type) {
+        case core.MsgTick: // Pass update msg to views
+            for v := range obs.views {
+                v <- msg
+            }
+        // Pubsub comments follow
         // Check against whitelist (or blacklist?)
         // Create view for new entities
         // Signal quit to the correct view for removed entities
+        }
     }
 }
 
