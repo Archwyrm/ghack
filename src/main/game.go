@@ -61,6 +61,8 @@ func (g Game) GameLoop() {
                     updated = make(map[chan core.Msg]bool, len(entities.Entities))
                     goto update_end
                 }
+            case core.MsgListEntities:
+                m.Reply <- g.makeEntityList()
             }
         }
 update_end:
@@ -71,4 +73,20 @@ update_end:
         fmt.Printf("Position is currently: %d, %d\n", pos.X, pos.Y)
         time.Sleep(3e9) // 3s
     }
+}
+
+func (g Game) makeEntityList() core.MsgListEntities {
+    var state EntityList
+    list := g.GetState(state).(EntityList)
+    length := len(list.Entities)
+    chans := make([]chan core.Msg, length)
+    ids := make([]core.EntityId, length)
+    names := make([]string, length)
+
+    for ch, ent := range list.Entities {
+        chans = append(chans, ch)
+        ids = append(ids, ent.Id())
+        names = append(names, ent.Name())
+    }
+    return core.MsgListEntities{nil, chans, ids, names}
 }
