@@ -112,6 +112,7 @@ func (cd *CmpData) Run(input chan Msg) {
         switch m := msg.(type) {
         case MsgTick:
             cd.update()
+            m.Origin <- MsgTick{input} // Reply that we are updated
         case MsgGetState:
             cd.sendState(m)
         case MsgGetAllStates:

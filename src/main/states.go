@@ -13,14 +13,14 @@ import (
 // not shared references. Currently used by the Game entity to contain all
 // other entities.
 type EntityList struct {
-    Entities map[string]core.Entity
+    Entities map[chan core.Msg]core.Entity
 }
 
 func (p EntityList) Id() core.StateId { return cmpId.EntityList }
 func (p EntityList) Name() string     { return "EntityList" }
 
 func NewEntityList() *EntityList {
-    return &EntityList{make(map[string]core.Entity)}
+    return &EntityList{make(map[chan core.Msg]core.Entity)}
 }
 
 // Simple 2D position

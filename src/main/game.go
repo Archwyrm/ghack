@@ -23,15 +23,14 @@ func NewGame(svc core.ServiceContext) *Game {
     return &Game{svc, core.NewCmpData()}
 }
 
-// TODO: Move functionality to an Init Action
 func (g Game) GameLoop() {
     // Initialize stuff
     entities := NewEntityList()
     g.SetState(entities)
 
     player := NewPlayer()
-    entities.Entities[player.Name()] = player
     playerChan := make(chan core.Msg)
+    entities.Entities[playerChan] = player
     go player.Run(playerChan)
 
     msg := core.MsgAddAction{&Move{1, 1}}
@@ -39,14 +38,37 @@ func (g Game) GameLoop() {
 
     reply := make(chan core.State)
     msg2 := core.MsgGetState{cmpId.Position, reply}
-    tick_msg := core.MsgTick{}
-    playerChan <- tick_msg // Tick once
+    tick_msg := core.MsgTick{g.svc.Game}
+
+    // List of up to date entities
+    updated := make(map[chan core.Msg]bool, len(entities.Entities))
 
     for {
+        // Tell all the entities that a new tick has started
+        for ent := range entities.Entities {
+            ent <- tick_msg
+        }
+
+        // Listen for any service messages
+        // Break out of loop once all entities have updated
+        for {
+            msg := <-g.svc.Game
+            switch m := msg.(type) {
+            case core.MsgTick:
+                updated[m.Origin] = true // bool value doesn't matter
+                if len(updated) == len(entities.Entities) {
+                    // Clear out list
+                    updated = make(map[chan core.Msg]bool, len(entities.Entities))
+                    goto update_end
+                }
+            }
+        }
+update_end:
+
+        // Just a little output for debugging
         playerChan <- msg2
         pos := (<-reply).(Position)
         fmt.Printf("Position is currently: %d, %d\n", pos.X, pos.Y)
-        playerChan <- tick_msg
-        time.Sleep(5e9) // 3s
+        time.Sleep(3e9) // 3s
     }
 }

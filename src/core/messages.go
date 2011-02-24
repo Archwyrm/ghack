@@ -10,8 +10,11 @@ package core
 // types are expected.
 type Msg interface{}
 
-// Message to update
-type MsgTick struct{}
+// Message to signal an update and/or updated status.
+// A completion of update reply should be sent to the Origin channel.
+type MsgTick struct {
+    Origin chan Msg // Identifies the sources of the tick
+}
 
 // Message requesting a certain state to be returned
 // Contains a channel where the reply should be sent
