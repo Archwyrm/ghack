@@ -203,6 +203,8 @@ start:
             goto start // No data was ready, read again
         } else if err == os.EINVAL {
             return nil, false // Socket closed mid-read
+        } else if opErr, ok := err.(*net.OpError); ok && opErr.Timeout() {
+            return nil, false
         }
         panic("Error reading message length: " + err.String())
     }
