@@ -107,6 +107,7 @@ message Login {
 
 message LoginResult {
     enum Reason {
+        ACCEPTED = 0;      // No errors
         ACCESS_DENIED = 1; // Wrong username or password
         SERVER_FULL = 2;   // Server has reached its maximum number of connected clients
         BANNED = 3;        // There is an administrative ban on connecting IP and/or account
