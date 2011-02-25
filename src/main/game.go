@@ -23,7 +23,7 @@ func NewGame(svc core.ServiceContext) *Game {
     return &Game{svc, core.NewCmpData()}
 }
 
-func (g Game) GameLoop() {
+func (g *Game) GameLoop() {
     // Initialize stuff
     entities := NewEntityList()
     g.SetState(entities)
@@ -76,17 +76,17 @@ update_end:
     }
 }
 
-func (g Game) makeEntityList() core.MsgListEntities {
+func (g *Game) makeEntityList() core.MsgListEntities {
     var state EntityList
     list := g.GetState(state).(EntityList)
     length := len(list.Entities)
-    chans := make([]chan core.Msg, length)
-    ids := make([]core.EntityId, length)
-    names := make([]string, length)
+    chans := make([]chan core.Msg, 0, length)
+    ids := make([]core.EntityId, 0, length)
+    names := make([]string, 0, length)
 
     for ch, ent := range list.Entities {
         chans = append(chans, ch)
-        ids = append(ids, ent.Id())
+        ids = append(ids, 0) // TODO: Send proper unique id
         names = append(names, ent.Name())
     }
     return core.MsgListEntities{nil, chans, ids, names}

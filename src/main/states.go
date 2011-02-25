@@ -19,8 +19,8 @@ type EntityList struct {
 func (p EntityList) Id() core.StateId { return cmpId.EntityList }
 func (p EntityList) Name() string     { return "EntityList" }
 
-func NewEntityList() *EntityList {
-    return &EntityList{make(map[chan core.Msg]core.Entity)}
+func NewEntityList() EntityList {
+    return EntityList{make(map[chan core.Msg]core.Entity)}
 }
 
 // Simple 2D position
