@@ -204,7 +204,8 @@ start:
         } else if err == os.EINVAL {
             return nil, false // Socket closed mid-read
         } else if opErr, ok := err.(*net.OpError); ok && opErr.Timeout() {
-            return nil, false
+            // Socket timed out on read, read again
+            goto start
         }
         panic("Error reading message length: " + err.String())
     }
