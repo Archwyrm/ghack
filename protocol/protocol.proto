@@ -158,3 +158,24 @@ message StateValue {
     optional string string_val = 5;
     repeated StateValue array_val = 6;
 }
+
+// Sends the client's movement intention to the server. Multiple directions may
+// be sent together, however opposite directions will obviously cancel out in
+// the game code. The start_or_stop field indicates whether intended movement in
+// this direction should be started or stopped. This is anagolous to
+// 'key_pressed' / 'key_released' events seen in other games, but abstracts the
+// actual input method.
+message Move {
+    enum Direction {
+        // Following comments assume 2D coordinate system where 0,0 is the
+        // upper left corner of the screen (for ghack-client)
+        X_POS = 1; // right
+        X_NEG = 2; // left
+        Y_POS = 3; // down
+        Y_NEG = 4; // up
+        Z_POS = 5; // reserved..
+        Z_NEG = 6; // for future use ;) (not that protobuf needs this!)
+    }
+    required Direction direction = 1;
+    required bool start_or_stop = 2;
+}
