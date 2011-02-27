@@ -161,12 +161,12 @@ message StateValue {
     repeated StateValue array_val = 6;
 }
 
-// Sends the client's movement intention to the server. Multiple directions may
-// be sent together, however opposite directions will obviously cancel out in
-// the game code. The start_or_stop field indicates whether intended movement in
-// this direction should be started or stopped. This is anagolous to
-// 'key_pressed' / 'key_released' events seen in other games, but abstracts the
-// actual input method.
+// Sends the client's movement intention to the server. The start
+// field indicates whether intended movement in this direction should be
+// started (true) or stopped (false). This is anagolous to 'key_pressed' /
+// 'key_released' events seen in other games, but abstracts the actual input
+// method. If opposite directions are sent, these will simply be cancelled
+// out in the game code.
 message Move {
     enum Direction {
         // Following comments assume 2D coordinate system where 0,0 is the
@@ -179,5 +179,5 @@ message Move {
         Z_NEG = 6; // for future use ;) (not that protobuf needs this!)
     }
     required Direction direction = 1;
-    required bool start_or_stop = 2;
+    required bool start = 2;
 }
