@@ -63,6 +63,7 @@ message Message {
         ADDENTITY = 5;
         REMOVEENTITY = 6;
         UPDATESTATE = 7;
+        MOVE = 8;
     }
 
     // Type of message that this contains
@@ -71,6 +72,7 @@ message Message {
     optional AddEntity add_entity = 2;
     optional RemoveEntity remove_entity = 3;
     optional UpdateState update_state = 4;
+    optional Move move = 5;
 
     // Only frequent messages should have an id < 16
     // One of these will be filled in
