@@ -51,7 +51,7 @@ func TestObserver(t *testing.T) {
     } else {
         // TODO: Check Id
         var state testState
-        state = ent.GetState(state).(testState)
+        state = ent.GetState(state.Id()).(testState)
         mstate, ok := m.State.(testState)
         if !ok {
             t.Fatalf("State update did not contain a testState")

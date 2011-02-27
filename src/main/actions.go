@@ -20,10 +20,8 @@ func (a Move) Name() string      { return "Move" }
 
 // Modifies the Position of an Entity with the passed Move vector.
 func (a Move) Act(ent core.Entity) {
-    var pos Position
-    var ok bool
     // Automatically create a position if it does not exist, keep?
-    pos, ok = ent.GetState(pos).(Position)
+    pos, ok := ent.GetState(cmpId.Position).(Position)
     if !ok {
         pos := Position{0, 0}
         ent.SetState(pos)

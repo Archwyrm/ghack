@@ -46,7 +46,7 @@ type Action interface {
 type Entity interface {
     Id() EntityId
     Name() string
-    GetState(state State) State
+    GetState(id StateId) State
     SetState(state State)
     AddAction(action Action)
     RemoveAction(action Action)
@@ -80,10 +80,10 @@ func (cd CmpData) Name() string { return "CmpData" }
 
 // The next functions form the core functionality of a component.
 
-// Returns the requested State. TODO: Take StateId?
-func (cd *CmpData) GetState(state State) State {
-    ret := cd.states[state.Id()]
-    return ret
+// Returns the requested State. It is up to the caller to verify that the wanted
+// state was actually returned.
+func (cd *CmpData) GetState(id StateId) State {
+    return cd.states[id]
 }
 
 // Set the value of the passed State. Replaces any existing State that is the same.

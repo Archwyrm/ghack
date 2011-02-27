@@ -77,8 +77,7 @@ update_end:
 }
 
 func (g *Game) makeEntityList() core.MsgListEntities {
-    var state EntityList
-    list := g.GetState(state).(EntityList)
+    list := g.GetState(cmpId.EntityList).(EntityList)
     length := len(list.Entities)
     chans := make([]chan core.Msg, 0, length)
     ids := make([]core.EntityId, 0, length)
