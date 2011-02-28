@@ -151,6 +151,7 @@ message StateValue {
         FLOAT = 3;
         STRING = 4;
         ARRAY = 5;
+        VECTOR3 = 6;
     }
 
     required Type type = 1;
@@ -158,7 +159,15 @@ message StateValue {
     optional int32 int_val = 3;
     optional float float_val = 4;
     optional string string_val = 5;
-    repeated StateValue array_val = 6;
+    optional Vector3 vector3_val = 6;
+    repeated StateValue array_val = 15;
+}
+
+// Three dimensional vector
+message Vector3 {
+    required double x = 1;
+    required double y = 2;
+    required double z = 3;
 }
 
 // Sends the client's movement intention to the server. The start
