@@ -141,4 +141,5 @@ func (cd *CmpData) sendAllStates(msg MsgGetAllStates) {
     for _, v := range cd.states {
         msg.StateReply <- v
     }
+    close(msg.StateReply)
 }
