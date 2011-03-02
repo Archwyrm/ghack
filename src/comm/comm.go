@@ -283,7 +283,7 @@ func (cl *client) RecvLoop(cs chan<- core.Msg) {
             cs <- removeClientMsg{cl, proto.GetString(msg.Disconnect.ReasonStr)}
             return
         default:
-            log.Println("Client send unhandled message, ignoring:",
+            log.Println("Client sent unhandled message, ignoring:",
                 protocol.Message_Type_name[int32(*msg.Type)])
         }
     }
