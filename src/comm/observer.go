@@ -75,7 +75,7 @@ func (obs *observer) observe() {
         msg := <-obs.ctrl
         switch m := msg.(type) {
         case core.MsgTick: // Pass update msg to views
-            for v := range obs.views {
+            for _, v := range obs.views {
                 v <- msg
             }
         // Pubsub comments follow
@@ -117,6 +117,8 @@ func (v *view) replicate(ctrl chan core.Msg) {
     msg := MsgUpdateState{}
 
     for {
+        reply := make(chan core.State) // TODO: Use some buffer size?
+        request.StateReply = reply
         // TODO: White or black list?
         // Get whitelisted states from entity (must check for new states)
         v.entity <- request
