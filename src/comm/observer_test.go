@@ -10,10 +10,6 @@ import (
     "core/core"
 )
 
-/*var map[string]core.Entity = {
-    "Hypothetical Entity 1" : Entity?
-}*/
-
 type testEntity struct {
     *core.CmpData
 }
@@ -40,8 +36,13 @@ func TestObserver(t *testing.T) {
 
     // Expecting one entity added
     msg := getMessage(t, client)
-    if _, ok := msg.(MsgAddEntity); !ok {
+    if m, ok := msg.(MsgAddEntity); !ok {
         t.Fatal("No entity added")
+    } else {
+        // TODO: Check Id
+        if ent.Name() != m.Name {
+            t.Errorf("Entity types do not match: %s != %s", ent.Name(), m.Name)
+        }
     }
 
     // Expecting one state update
