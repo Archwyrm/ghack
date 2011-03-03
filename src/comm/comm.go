@@ -139,8 +139,8 @@ func connect(svc core.ServiceContext, cs chan<- core.Msg, conn net.Conn) {
 
     // Read connect message
     conn.SetReadTimeout(1e9) // 1s
-    msg, ok := readMessage(conn)
-    if !ok || msg.Connect == nil {
+    msg := readMessageOrPanic(conn)
+    if msg.Connect == nil {
         panic("Connect message not received!")
     }
 
@@ -153,11 +153,11 @@ func connect(svc core.ServiceContext, cs chan<- core.Msg, conn net.Conn) {
 
     // Send connect reply
     msg = makeConnect()
-    sendMessage(conn, msg)
+    sendMessageOrPanic(conn, msg)
 
     // Read login message
-    msg, ok = readMessage(conn)
-    if !ok || msg.Login == nil {
+    msg = readMessageOrPanic(conn)
+    if msg.Login == nil {
         panic("Login message not received!")
     }
     login := msg.Login
@@ -165,7 +165,7 @@ func connect(svc core.ServiceContext, cs chan<- core.Msg, conn net.Conn) {
 
     // Send login reply
     msg = makeLoginResult(true, 0)
-    sendMessage(conn, msg)
+    sendMessageOrPanic(conn, msg)
 
     cs <- addClientMsg{newClient(svc, cs, conn, login)}
 }
@@ -178,23 +178,40 @@ func logAndClose(conn net.Conn) {
     }
 }
 
-func sendMessage(w io.Writer, msg *protocol.Message) {
+func sendMessageOrPanic(w io.Writer, msg *protocol.Message) {
+    err := sendMessage(w, msg)
+    if err != nil {
+        panic(err.String())
+    }
+}
+
+func readMessageOrPanic(r io.Reader) *protocol.Message {
+    msg, err := readMessage(r)
+    if err != nil {
+        panic(err.String())
+    }
+    return msg
+}
+
+func sendMessage(w io.Writer, msg *protocol.Message) os.Error {
     // Marshal protobuf
     bs, err := proto.Marshal(msg)
     if err != nil {
-        panic("Error marshaling message: " + err.String())
+        return err
     }
 
     // Send pb
     if bs, err = prependByteLength(bs); err != nil {
-        panic("Cannot prepend: " + err.String())
+        return err
     }
     if _, err = w.Write(bs); err != nil {
-        panic("Error writing message: " + err.String())
+        return err
     }
+
+    return nil
 }
 
-func readMessage(r io.Reader) (msg *protocol.Message, ok bool) {
+func readMessage(r io.Reader) (msg *protocol.Message, err os.Error) {
 start:
     // Read length
     length, err := readLength(r)
@@ -202,12 +219,13 @@ start:
         if err == os.EOF {
             goto start // No data was ready, read again
         } else if err == os.EINVAL {
-            return nil, false // Socket closed mid-read
+            return nil, err // Socket closed mid-read
         } else if opErr, ok := err.(*net.OpError); ok && opErr.Timeout() {
             // Socket timed out on read, read again
             goto start
+        } else {
+            return nil, err
         }
-        panic("Error reading message length: " + err.String())
     }
 
     // Read the message bytes
@@ -219,9 +237,9 @@ start:
     // Unmarshal
     msg = new(protocol.Message)
     if err := proto.Unmarshal(bs, msg); err != nil {
-        panic("Error unmarshaling msg: " + err.String())
+        return nil, err
     }
-    return msg, true
+    return msg, nil
 }
 
 // Reads the length of a message
@@ -265,7 +283,7 @@ l *protocol.Login) *client {
     obs := createObserver(svc, ch)
     cl := &client{*l.Name, conn, ch, proto.GetUint32(l.Permissions), obs}
     go cl.RecvLoop(cs)
-    go cl.SendLoop()
+    go cl.SendLoop(cs)
     return cl
 }
 
@@ -273,9 +291,10 @@ l *protocol.Login) *client {
 func (cl *client) RecvLoop(cs chan<- core.Msg) {
     defer logAndClose(cl.conn)
     for {
-        msg, ok := readMessage(cl.conn)
-        if !ok {
-            cs <- removeClientMsg{cl, "Client hung up unexpectedly"}
+        msg, err := readMessage(cl.conn)
+        if err != nil {
+            // Remove client if something went wrong
+            cs <- removeClientMsg{cl, "Reading message from client failed: " + err.String()}
             return
         }
         switch *msg.Type {
@@ -290,21 +309,27 @@ func (cl *client) RecvLoop(cs chan<- core.Msg) {
 }
 
 // Sends messages over the remote conn that come through the queue.
-func (cl *client) SendLoop() {
+func (cl *client) SendLoop(cs chan<- core.Msg) {
     defer logAndClose(cl.conn)
     for {
         msg := <-cl.SendQueue
         if msg == nil && closed(cl.SendQueue) {
             return
         }
+        var err os.Error
         switch m := msg.(type) {
         case MsgAddEntity:
-            sendMessage(cl.conn, makeAddEntity(m.Id, m.Name))
+            err = sendMessage(cl.conn, makeAddEntity(m.Id, m.Name))
         case MsgRemoveEntity:
-            sendMessage(cl.conn, makeRemoveEntity(m.Id, m.Name))
+            err = sendMessage(cl.conn, makeRemoveEntity(m.Id, m.Name))
         case MsgUpdateState:
             value := packState(m.State)
-            sendMessage(cl.conn, makeUpdateState(m.Id, m.State.Name(), value))
+            err = sendMessage(cl.conn, makeUpdateState(m.Id, m.State.Name(), value))
+        }
+        // Remove client if something went wrong
+        if err != nil {
+            cs <- removeClientMsg{cl, "Reading message from client failed: " + err.String()}
+            return
         }
     }
 }

@@ -54,11 +54,11 @@ func connectClient(t *testing.T, fd net.Conn) {
 
     // Create protocol buffer to initiate connection
     connect := makeConnect()
-    sendMessage(fd, connect)
+    sendMessageOrPanic(fd, connect)
 
     failure = "Connect message not received"
-    msg, ok := readMessage(fd)
-    if !ok || msg.Connect == nil {
+    msg := readMessageOrPanic(fd)
+    if msg.Connect == nil {
         t.Fatalf(failure)
     }
     reply_pb := msg.Connect
@@ -72,12 +72,12 @@ func connectClient(t *testing.T, fd net.Conn) {
     // Send login message
     failure = "Error sending login message"
     login := makeLogin("TestPlayer", "passwordHash", 0)
-    sendMessage(fd, login)
+    sendMessageOrPanic(fd, login)
 
     // Read login result message
     failure = "Login result message not received"
-    msg, ok = readMessage(fd)
-    if !ok || msg.LoginResult == nil {
+    msg = readMessageOrPanic(fd)
+    if msg.LoginResult == nil {
         t.Fatalf(failure)
     }
     result := msg.LoginResult
@@ -108,7 +108,7 @@ func TestConnect(t *testing.T) {
         }
     }()
     disconnect := makeDisconnect(protocol.Disconnect_QUIT, "Test finished")
-    sendMessage(fd, disconnect)
+    sendMessageOrPanic(fd, disconnect)
 
     fd.Close()
 
