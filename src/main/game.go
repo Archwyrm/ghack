@@ -65,7 +65,7 @@ func (g *Game) GameLoop() {
                 m.Reply <- g.makeEntityList()
             }
         }
-update_end:
+    update_end:
         g.svc.Comm <- core.MsgTick{g.svc.Game}
 
         // Just a little output for debugging

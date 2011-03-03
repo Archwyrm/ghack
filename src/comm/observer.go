@@ -78,10 +78,10 @@ func (obs *observer) observe() {
             for _, v := range obs.views {
                 v <- msg
             }
-        // Pubsub comments follow
-        // Check against whitelist (or blacklist?)
-        // Create view for new entities
-        // Signal quit to the correct view for removed entities
+            // Pubsub comments follow
+            // Check against whitelist (or blacklist?)
+            // Create view for new entities
+            // Signal quit to the correct view for removed entities
         }
     }
 }
@@ -111,8 +111,7 @@ type view struct {
 
 func (v *view) replicate(ctrl chan core.Msg) {
     v.states = make(core.StateList)
-    reply := make(chan core.State) // TODO: Use some buffer size?
-    request := core.MsgGetAllStates{reply}
+    request := core.MsgGetAllStates{}
     // TODO: Set Id as this is always the same for a given view
     msg := MsgUpdateState{}
 
