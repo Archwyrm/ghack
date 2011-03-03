@@ -204,8 +204,10 @@ func sendMessage(w io.Writer, msg *protocol.Message) os.Error {
     if bs, err = prependByteLength(bs); err != nil {
         return err
     }
-    if _, err = w.Write(bs); err != nil {
+    if n, err := w.Write(bs); err != nil {
         return err
+    } else if n != len(bs) {
+        return os.NewError(fmt.Sprintf("Wrote only %d bytes out of %d bytes!", n, len(bs)))
     }
 
     return nil
@@ -230,8 +232,10 @@ start:
 
     // Read the message bytes
     bs := make([]byte, length)
-    if _, err := io.ReadFull(r, bs); err != nil {
+    if n, err := io.ReadFull(r, bs); err != nil {
         log.Println("Error reading message bytes:", err)
+    } else if n != len(bs) {
+        return nil, os.NewError(fmt.Sprintf("Read only %d bytes out of expected %d bytes!", n, length))
     }
 
     // Unmarshal
