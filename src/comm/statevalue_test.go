@@ -49,12 +49,13 @@ func TestSingleFieldState(t *testing.T) {
 }
 
 func TestMultipleFieldState(t *testing.T) {
-    state := multipleFieldState{1, 2}
+    a, b := 1, 2
+    state := multipleFieldState{a, b}
     sv := &protocol.StateValue{}
     sv.Type = protocol.NewStateValue_Type(protocol.StateValue_ARRAY)
 
-    inner_v1 := makeIntValMsg(1)
-    inner_v2 := makeIntValMsg(2)
+    inner_v1 := makeIntValMsg(a)
+    inner_v2 := makeIntValMsg(b)
     sv.ArrayVal = append([]*protocol.StateValue{}, inner_v1, inner_v2)
 
     equalOrError(t, sv, packState(state))
