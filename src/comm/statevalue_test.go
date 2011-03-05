@@ -31,6 +31,13 @@ func (x sliceFieldState) Id() core.StateId { return 2 }
 func (x sliceFieldState) Name() string     { return "SliceFieldState" }
 func newSliceFieldState(s []int) *sliceFieldState { return &sliceFieldState{s}}
 
+type ptrFieldState struct {
+    Value *int
+}
+
+func (x ptrFieldState) Id() core.StateId { return 3 }
+func (x ptrFieldState) Name() string     { return "ptrFieldState" }
+
 func TestSingleFieldState(t *testing.T) {
     // testState is made available by observer_test.go
     state := testState{9}
@@ -64,6 +71,16 @@ func TestSliceFieldState(t *testing.T) {
         msgs = append(msgs, makeIntValMsg(i))
     }
     sv.ArrayVal = msgs
+
+    equalOrError(t, sv, packState(state))
+}
+
+func TestPtrFieldState(t *testing.T) {
+    num := 9
+    state := ptrFieldState{&num}
+    sv := &protocol.StateValue{}
+    sv.Type = protocol.NewStateValue_Type(protocol.StateValue_INT)
+    sv.IntVal = proto.Int(*state.Value)
 
     equalOrError(t, sv, packState(state))
 }

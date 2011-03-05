@@ -49,8 +49,10 @@ func readField(val reflect.Value) *protocol.StateValue {
     case *reflect.SliceValue:
         msg.Type = protocol.NewStateValue_Type(protocol.StateValue_ARRAY)
         msg.ArrayVal = makeStateValueArray(f, f.Len())
+    case *reflect.PtrValue:
+        return readField(reflect.Indirect(f)) // Dereference and recurse
     default:
-        panic("State value not supported:" + val.Type().String())
+        panic("State value not supported: " + val.Type().String())
     }
     return msg
 }
