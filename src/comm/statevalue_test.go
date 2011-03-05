@@ -12,6 +12,7 @@ import (
     "reflect"
     "core/core"
     "protocol/protocol"
+    "github.com/tm1rbrt/s3dm"
     "goprotobuf.googlecode.com/hg/proto"
 )
 
@@ -37,6 +38,13 @@ type ptrFieldState struct {
 
 func (x ptrFieldState) Id() core.StateId { return 3 }
 func (x ptrFieldState) Name() string     { return "ptrFieldState" }
+
+type v3FieldState struct {
+    Value s3dm.V3
+}
+
+func (x v3FieldState) Id() core.StateId { return 4 }
+func (x v3FieldState) Name() string     { return "v3FieldState" }
 
 func TestSingleFieldState(t *testing.T) {
     // testState is made available by observer_test.go
@@ -82,6 +90,16 @@ func TestPtrFieldState(t *testing.T) {
     sv := &protocol.StateValue{}
     sv.Type = protocol.NewStateValue_Type(protocol.StateValue_INT)
     sv.IntVal = proto.Int(*state.Value)
+
+    equalOrError(t, sv, packState(state))
+}
+
+func TestV3FieldState(t *testing.T) {
+    vec := s3dm.V3{9, 9, 9}
+    state := v3FieldState{vec}
+    sv := &protocol.StateValue{}
+    sv.Type = protocol.NewStateValue_Type(protocol.StateValue_VECTOR3)
+    sv.Vector3Val = &protocol.Vector3{&vec.X, &vec.Y, &vec.Z, nil}
 
     equalOrError(t, sv, packState(state))
 }

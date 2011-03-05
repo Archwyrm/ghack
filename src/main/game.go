@@ -7,6 +7,7 @@ package main
 import (
     "fmt"
     "time"
+    "github.com/tm1rbrt/s3dm"
     "core/core"
     "cmpId/cmpId"
 )
@@ -33,7 +34,7 @@ func (g *Game) GameLoop() {
     entities.Entities[playerChan] = player
     go player.Run(playerChan)
 
-    msg := core.MsgAddAction{&Move{1, 1}}
+    msg := core.MsgAddAction{&Move{&s3dm.V3{1, 1, 1}}}
     playerChan <- msg
 
     reply := make(chan core.State)
@@ -71,7 +72,7 @@ func (g *Game) GameLoop() {
         // Just a little output for debugging
         playerChan <- msg2
         pos := (<-reply).(Position)
-        fmt.Printf("Position is currently: %d, %d\n", pos.X, pos.Y)
+        fmt.Printf("Position is currently: %g, %g\n", pos.Position.X, pos.Position.Y)
         time.Sleep(3e9) // 3s
     }
 }

@@ -5,14 +5,13 @@
 package main
 
 import (
+    "github.com/tm1rbrt/s3dm"
     "core/core"
     "cmpId/cmpId"
 )
 
-// Simple movement.
 type Move struct {
-    DirX int
-    DirY int
+    Direction *s3dm.V3
 }
 
 func (a Move) Id() core.ActionId { return cmpId.Move }
@@ -23,11 +22,10 @@ func (a Move) Act(ent core.Entity) {
     // Automatically create a position if it does not exist, keep?
     pos, ok := ent.GetState(cmpId.Position).(Position)
     if !ok {
-        pos := Position{0, 0}
+        pos = Position{&s3dm.V3{0, 0, 0}}
         ent.SetState(pos)
     }
-    pos.X += a.DirX
-    pos.Y += a.DirY
+    pos.Position = pos.Position.Add(a.Direction)
 
     // Stick the value back in
     // This possibly orphans the existing structure which may be hard on the GC

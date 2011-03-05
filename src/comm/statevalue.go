@@ -49,12 +49,26 @@ func readField(val reflect.Value) *protocol.StateValue {
     case *reflect.SliceValue:
         msg.Type = protocol.NewStateValue_Type(protocol.StateValue_ARRAY)
         msg.ArrayVal = makeStateValueArray(f, f.Len())
+    case *reflect.StructValue:
+        msg = readStructField(f)
     case *reflect.PtrValue:
         return readField(reflect.Indirect(f)) // Dereference and recurse
     default:
         panic("State value not supported: " + val.Type().String())
     }
     return msg
+}
+
+// Reads a field that is not a builtin type, but a user created struct. These
+// types have specific message types so the receiving end can identify them.
+func readStructField(val *reflect.StructValue) *protocol.StateValue {
+    t := val.Type()
+    switch t.Name() {
+    case "V3": // Vector type:
+        return makeVector3(val)
+    }
+    panic("Struct value not supported: " + t.String())
+    return nil // Will never get here
 }
 
 // Creates a slice of StateValues based on multiple arbitrary types.
@@ -77,4 +91,19 @@ func makeStateValueArray(value reflect.Value, num int) []*protocol.StateValue {
         msg_array = append(msg_array, readField(val))
     }
     return msg_array
+}
+
+// Makes a Vector3 StateValue. Panics if the StructValue fields do not match the vector.
+func makeVector3(v *reflect.StructValue) *protocol.StateValue {
+    // If we panic here, struct layout was not as expected
+    x := v.FieldByName("X").(*reflect.FloatValue).Get()
+    y := v.FieldByName("Y").(*reflect.FloatValue).Get()
+    z := v.FieldByName("Z").(*reflect.FloatValue).Get()
+
+    vector3 := &protocol.Vector3{&x, &y, &z, nil}
+    sv := &protocol.StateValue{
+        Type: protocol.NewStateValue_Type(protocol.StateValue_VECTOR3),
+        Vector3Val: vector3,
+    }
+    return sv
 }

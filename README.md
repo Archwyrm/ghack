@@ -42,13 +42,15 @@ In short, the following things are required to use this software:
  * [godag build tool](http://code.google.com/p/godag/)
  * [protobuf - Protocol Buffers](http://code.google.com/p/protobuf/)
  * [goprotobuf](http://code.google.com/p/goprotobuf/)
+ * [s3dm - Simple 3D Maths](https://github.com/tm1rbrt/s3dm)
 
 Please see the individual package's installation instructions in order
 to install. All Go dependencies should use the latest version available.
 
-goprotobuf may be installed with the simple command:
+Some dependencies may be installed easily with goinstall:
 
     goinstall goprotobuf.googlecode.com/hg/proto
+    goinstall github.com/tm1rbrt/s3dm
 
 Once all the dependencies are present, run:
 

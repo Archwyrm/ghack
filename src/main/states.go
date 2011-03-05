@@ -7,6 +7,7 @@ package main
 import (
     "core/core"
     "cmpId/cmpId"
+    "github.com/tm1rbrt/s3dm"
 )
 
 // Contains a list of entities. Note that these are entire entities,
@@ -23,9 +24,8 @@ func NewEntityList() EntityList {
     return EntityList{make(map[chan core.Msg]core.Entity)}
 }
 
-// Simple 2D position
 type Position struct {
-    X, Y int
+    Position *s3dm.V3
 }
 
 func (p Position) Id() core.StateId { return cmpId.Position }
