@@ -102,7 +102,7 @@ func makeVector3(v *reflect.StructValue) *protocol.StateValue {
 
     vector3 := &protocol.Vector3{&x, &y, &z, nil}
     sv := &protocol.StateValue{
-        Type: protocol.NewStateValue_Type(protocol.StateValue_VECTOR3),
+        Type:       protocol.NewStateValue_Type(protocol.StateValue_VECTOR3),
         Vector3Val: vector3,
     }
     return sv

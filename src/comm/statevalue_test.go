@@ -30,7 +30,6 @@ type sliceFieldState struct {
 
 func (x sliceFieldState) Id() core.StateId { return 2 }
 func (x sliceFieldState) Name() string     { return "SliceFieldState" }
-func newSliceFieldState(s []int) *sliceFieldState { return &sliceFieldState{s}}
 
 type ptrFieldState struct {
     Value *int
