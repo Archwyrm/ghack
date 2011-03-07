@@ -138,7 +138,7 @@ message RemoveEntity {
 message UpdateState {
     required int32 id = 1; // Unique identifier for the owner entity
     required string state_id = 2; // Name of the state to update
-    optional StateValue value = 3; // Value to set for the state
+    required StateValue value = 3; // Value to set for the state
 }
 
 // States may contain any value, this message updates the most commonly used values.
