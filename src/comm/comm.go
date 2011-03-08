@@ -38,9 +38,6 @@ type removeClientMsg struct {
     reason string
 }
 
-// Message to shut the server down gracefully
-type ShutdownServerMsg struct{}
-
 type CommService struct {
     svc     core.ServiceContext
     clients []*client
@@ -63,7 +60,7 @@ func (cs *CommService) Run(input chan core.Msg) {
             log.Println(m.cl.name, "connected")
         case removeClientMsg:
             cs.removeClient(m)
-        case ShutdownServerMsg:
+        case core.MsgQuit:
             shutdown <- true      // stop listening first so we don't
             cs.removeAllClients() // add any more clients
             return

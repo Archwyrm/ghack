@@ -16,6 +16,10 @@ type MsgTick struct {
     Origin chan Msg // Identifies the sources of the tick
 }
 
+// Tells the receiver to quit, shutdown, stop, halt, cease operations, close for
+// business, etc..
+type MsgQuit struct{}
+
 // Message requesting a certain state to be returned
 // Contains a channel where the reply should be sent
 type MsgGetState struct {
@@ -55,6 +59,7 @@ type MsgEntityAdded struct {
 
 // Signals that a specific entity has been removed from the game
 type MsgEntityRemoved struct {
-    Id   int // Unique id for entity
-    Name string
+    Id     int // Unique id for entity
+    Name   string
+    Entity chan Msg // Handle for entity
 }

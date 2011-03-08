@@ -104,7 +104,7 @@ func TestConnect(t *testing.T) {
         }
 
         if !serviceClosed {
-            cs <- ShutdownServerMsg{}
+            cs <- core.MsgQuit{}
         }
     }()
     disconnect := makeDisconnect(protocol.Disconnect_QUIT, "Test finished")
@@ -121,7 +121,7 @@ func TestServerQuit(t *testing.T) {
     fd := newTestClient(t)
     connectClient(t, fd)
 
-    cs <- ShutdownServerMsg{}
+    cs <- core.MsgQuit{}
     time.Sleep(1e7) // Block thread 10ms to let the server respond
     if len(svc.clients) > 0 {
         t.Fatalf("Client not removed from server list")

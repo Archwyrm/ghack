@@ -49,12 +49,21 @@ func TestObserver(t *testing.T) {
     verifyEntityAdded(t, client, ent2)
     verifyStateUpdated(t, client, ent2)
 
-    // TODO: Send quit message to obs
-    obs <- false // Quit
+    // Expecting entity removed
+    rm_msg := core.MsgEntityRemoved{0, ent2.Name(), ent_ch2} // TODO: Id
+    svc.PubSub <- pubsub.PublishMsg{"entity", rm_msg}
+    verifyEntityRemoved(t, client, ent2)
+
+    obs <- core.MsgQuit{}
 }
 
 func TestDuplicateEntity(t *testing.T) {
     // TODO: Implement trying to add same entity twice (observer should panic)
+}
+
+func TestRemovingUnaddedEntity(t *testing.T) {
+    // TODO: Implement trying to remove an entity that has not been added
+    // (observer should panic)
 }
 
 func verifyEntityAdded(t *testing.T, client chan core.Msg, ent core.Entity) {
@@ -64,7 +73,19 @@ func verifyEntityAdded(t *testing.T, client chan core.Msg, ent core.Entity) {
     } else {
         // TODO: Check Id
         if ent.Name() != m.Name {
-            t.Errorf("Entity types do not match: %s != %s", ent.Name(), m.Name)
+            t.Errorf("Entity added: Types do not match: %s != %s", ent.Name(), m.Name)
+        }
+    }
+}
+
+func verifyEntityRemoved(t *testing.T, client chan core.Msg, ent core.Entity) {
+    msg := getMessage(t, client)
+    if m, ok := msg.(MsgRemoveEntity); !ok {
+        t.Fatal("No entity removed")
+    } else {
+        // TODO: Check Id
+        if ent.Name() != m.Name {
+            t.Errorf("Entity removed: Types do not match: %s != %s", ent.Name(), m.Name)
         }
     }
 }

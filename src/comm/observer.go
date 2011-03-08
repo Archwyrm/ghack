@@ -16,12 +16,14 @@ import (
 )
 
 // Signal that an entity should be sent to a client
+// TODO: Combine with core.MsgEntityAdded somehow?
 type MsgAddEntity struct {
     Id   int32 // Unique Id
     Name string
 }
 
 // Signal that an entity should be removed from a client
+// TODO: Combine with core.MsgEntityRemoved somehow?
 type MsgRemoveEntity struct {
     Id   int32 // Unique Id
     Name string
@@ -40,6 +42,7 @@ type observer struct {
     // The client on whose behalf this observer replicates
     client chan core.Msg
     // Maps the entity to its view's control channel
+    // TODO: Store by Id, not chan?
     views map[chan core.Msg]chan core.Msg
     // Channel to control this observer
     ctrl chan core.Msg
@@ -93,8 +96,16 @@ func (obs *observer) observe() {
             }
             obs.addView(m.Id, m.Entity, m.Name)
         case core.MsgEntityRemoved:
-            println("Received MsgEntityRemoved")
             // Signal quit to the correct view
+            if ch, ok := obs.views[m.Entity]; ok {
+                ch <- core.MsgQuit{}
+            } else {
+                str := "Tried to remove an unadded entity:\n"
+                str = fmt.Sprint(str, m.Id, " ", m.Name)
+                panic(str)
+            }
+            obs.views[m.Entity] = nil, false
+            obs.client <- MsgRemoveEntity{int32(m.Id), m.Name}
         }
     }
 }
@@ -129,7 +140,7 @@ func (v *view) replicate(ctrl chan core.Msg) {
     msg := MsgUpdateState{}
 
     for {
-        reply := make(chan core.State) // TODO: Use some buffer size?
+        reply := make(chan core.State)
         request.StateReply = reply
         // TODO: White or black list?
         // Get whitelisted states from entity (must check for new states)
@@ -149,7 +160,10 @@ func (v *view) replicate(ctrl chan core.Msg) {
             v.client <- msg
         }
         // Listen for next update signal
-        <-ctrl
+        msg := <-ctrl
+        if _, ok := msg.(core.MsgQuit); ok {
+            return
+        }
     }
 }
 
