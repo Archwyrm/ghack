@@ -25,4 +25,5 @@ const (
     Entity = iota
     Game
     Player
+    Spider
 )

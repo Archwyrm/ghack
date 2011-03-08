@@ -29,13 +29,13 @@ func (g *Game) GameLoop() {
     entities := NewEntityList()
     g.SetState(entities)
 
-    player := NewPlayer()
-    playerChan := make(chan core.Msg)
-    entities.Entities[playerChan] = player
-    go player.Run(playerChan)
+    spider := NewSpider()
+    spiderChan := make(chan core.Msg)
+    entities.Entities[spiderChan] = spider
+    go spider.Run(spiderChan)
 
     msg := core.MsgAddAction{&Move{&s3dm.V3{1, 1, 1}}}
-    playerChan <- msg
+    spiderChan <- msg
 
     reply := make(chan core.State)
     msg2 := core.MsgGetState{cmpId.Position, reply}
@@ -70,7 +70,7 @@ func (g *Game) GameLoop() {
         g.svc.Comm <- core.MsgTick{g.svc.Game}
 
         // Just a little output for debugging
-        playerChan <- msg2
+        spiderChan <- msg2
         pos := (<-reply).(Position)
         fmt.Printf("Position is currently: %g, %g\n", pos.Position.X, pos.Position.Y)
         time.Sleep(3e9) // 3s
