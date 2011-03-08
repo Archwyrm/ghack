@@ -8,6 +8,7 @@ import (
     "testing"
     "time"
     "core/core"
+    "pubsub/pubsub"
 )
 
 type testEntity struct {
@@ -35,6 +36,28 @@ func TestObserver(t *testing.T) {
     obs := createObserver(svc, client)
 
     // Expecting one entity added
+    verifyEntityAdded(t, client, ent)
+    // Expecting one state update
+    verifyStateUpdated(t, client, ent)
+
+    // Create entity and publish its addition
+    ent2, ent_ch2 := createTestEntity(2)
+    add_msg := core.MsgEntityAdded{0, ent2.Name(), ent_ch2} // TODO: Id
+    svc.PubSub <- pubsub.PublishMsg{"entity", add_msg}
+
+    // Expecting entity added and one state updated
+    verifyEntityAdded(t, client, ent2)
+    verifyStateUpdated(t, client, ent2)
+
+    // TODO: Send quit message to obs
+    obs <- false // Quit
+}
+
+func TestDuplicateEntity(t *testing.T) {
+    // TODO: Implement trying to add same entity twice (observer should panic)
+}
+
+func verifyEntityAdded(t *testing.T, client chan core.Msg, ent core.Entity) {
     msg := getMessage(t, client)
     if m, ok := msg.(MsgAddEntity); !ok {
         t.Fatal("No entity added")
@@ -44,9 +67,10 @@ func TestObserver(t *testing.T) {
             t.Errorf("Entity types do not match: %s != %s", ent.Name(), m.Name)
         }
     }
+}
 
-    // Expecting one state update
-    msg = getMessage(t, client)
+func verifyStateUpdated(t *testing.T, client chan core.Msg, ent core.Entity) {
+    msg := getMessage(t, client)
     if m, ok := msg.(MsgUpdateState); !ok {
         t.Fatal("No state update received")
     } else {
@@ -58,12 +82,10 @@ func TestObserver(t *testing.T) {
             t.Fatalf("State update did not contain a testState")
         }
         if state.Value != mstate.Value {
-            t.Fatalf("testState values do not match")
+            t.Fatalf("testState values do not match, state: %v\n message state:%v",
+                state.Value, mstate.Value)
         }
     }
-
-    // TODO: Send quit message to obs
-    obs <- false // Quit
 }
 
 // Gets a message or times out with an error
@@ -101,7 +123,22 @@ testId core.EntityId, testName string) {
 
 // Masquerades as a pubsub service for testing purposes
 func pubsubEmulator(t *testing.T, svc core.ServiceContext) {
-    // TODO: Handle data. Just drain the channel for now.
-    <-svc.PubSub
-    t.Fatal("Not implemented yet!")
+    var obs chan core.Msg
+    for {
+        msg := <-svc.PubSub
+        switch m := msg.(type) {
+        case pubsub.SubscribeMsg:
+            if m.Topic != "entity" {
+                t.Fatalf("Observer subscribed to wrong topic: %s", m.Topic)
+            }
+            obs = m.ReplyChan
+        case pubsub.PublishMsg:
+            if obs == nil {
+                t.Fatal("Observer not subscribed!")
+            }
+            obs <- m.Data
+        default:
+            t.Fatal("Something wrong with test")
+        }
+    }
 }

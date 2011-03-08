@@ -45,3 +45,16 @@ type MsgListEntities struct {
     Types    []EntityId
     Names    []string
 }
+
+// Signals that a specific entity has been added to the game
+type MsgEntityAdded struct {
+    Id     int // Unique id for entity
+    Name   string
+    Entity chan Msg // Handle for entity
+}
+
+// Signals that a specific entity has been removed from the game
+type MsgEntityRemoved struct {
+    Id   int // Unique id for entity
+    Name string
+}

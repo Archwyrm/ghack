@@ -10,7 +10,9 @@ package comm
 // side, Entities are unaware that they are not talking to other entities.
 
 import (
+    "fmt"
     "core/core"
+    "pubsub/pubsub"
 )
 
 // Signal that an entity should be sent to a client
@@ -55,7 +57,7 @@ func createObserver(svc core.ServiceContext, client chan core.Msg) chan core.Msg
 func (obs *observer) init() {
     // Get list of entities for initial sync
     reply := make(chan core.Msg)
-    obs.svc.Game <- core.MsgListEntities{reply, nil, nil, nil}
+    obs.svc.Game <- core.MsgListEntities{Reply: reply}
     list, ok := (<-reply).(core.MsgListEntities)
     if !ok {
         panic("Request received incorrect reply")
@@ -64,8 +66,10 @@ func (obs *observer) init() {
         if checkBlacklist(list.Types[i]) {
             continue
         }
-        obs.addView(list.Entities[i], list.Names[i])
+        // TODO: set proper id
+        obs.addView(0, list.Entities[i], list.Names[i])
     }
+    obs.svc.PubSub <- pubsub.SubscribeMsg{"entity", obs.ctrl}
 }
 
 func (obs *observer) observe() {
@@ -78,17 +82,26 @@ func (obs *observer) observe() {
             for _, v := range obs.views {
                 v <- msg
             }
-            // Pubsub comments follow
-            // Check against whitelist (or blacklist?)
-            // Create view for new entities
-            // Signal quit to the correct view for removed entities
+        case core.MsgEntityAdded:
+            if checkBlacklist(0) { // TODO: Check proper type id
+                continue
+            }
+            if _, present := obs.views[m.Entity]; present {
+                str := "Duplicate MsgEntityAdded received, entity already has view:\n"
+                str = fmt.Sprint(str, m.Id, " ", m.Name)
+                panic(str)
+            }
+            obs.addView(m.Id, m.Entity, m.Name)
+        case core.MsgEntityRemoved:
+            println("Received MsgEntityRemoved")
+            // Signal quit to the correct view
         }
     }
 }
 
 // Creates a new view and starts it replicating
-func (obs *observer) addView(entity chan core.Msg, entName string) {
-    obs.client <- MsgAddEntity{0, entName} // TODO: Get the id
+func (obs *observer) addView(id int, entity chan core.Msg, entName string) {
+    obs.client <- MsgAddEntity{int32(id), entName}
     v := &view{client: obs.client, entity: entity}
     v_ch := make(chan core.Msg)
     obs.views[entity] = v_ch

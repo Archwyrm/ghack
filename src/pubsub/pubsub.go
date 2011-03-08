@@ -13,6 +13,8 @@ import (
     "core/core"
 )
 
+type ChanType chan core.Msg
+
 // Message to signal publishing of the passed data
 type PublishMsg struct {
     Topic string
@@ -22,24 +24,24 @@ type PublishMsg struct {
 // Message to setup a subscription to a given topic
 type SubscribeMsg struct {
     Topic     string
-    ReplyChan chan interface{}
+    ReplyChan ChanType
 }
 
 // Message to remove a subscription to a given topic
 // ReplyChan is to identify the subscriber
 type UnsubscribeMsg struct {
     Topic     string
-    ReplyChan chan interface{}
+    ReplyChan ChanType
 }
 
 // Publish/Subscribe struct
 type PubSub struct {
-    subscriptions map[string][]chan interface{}
+    subscriptions map[string][]ChanType
 }
 
 // Creates a new PubSub and returns a pointer to it
 func NewPubSub() *PubSub {
-    return &PubSub{make(map[string][]chan interface{})}
+    return &PubSub{make(map[string][]ChanType)}
 }
 
 // Starts a loop to receive and handle messages from the passed channel

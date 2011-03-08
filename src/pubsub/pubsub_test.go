@@ -6,8 +6,6 @@ package pubsub_test
 
 import (
     "testing"
-    "testing/script"
-    "fmt"
     "time"
     "pubsub/pubsub"
     "core/core"
@@ -21,27 +19,45 @@ var testData = []string{
 
 var topic = "test"
 
-// Tests subscription followed by publishing
 func TestSubscribeAndPublish(t *testing.T) {
-    // Initialize
     ps := startPubSub()
-
-    // Subscribe
-    chans := makeAndSubscribe(ps, topic, 10)
-
-    relay := startRelay(ps, topic)
+    chans := makeAndSubscribe(ps, topic, 3)
+    verified := make(chan bool)
 
     // Publish and verify one message at a time
-    var events, recvs []*script.Event
-    for _, data := range testData {
-        send := script.NewEvent("send", recvs, script.Send{relay, data})
-        recvs = makeRecvEvents(chans, []*script.Event{send}, data)
-        events = append(append(events, send), recvs...)
-    }
-    err := script.Perform(0, events)
+    for _, msg := range testData {
+        // Publish message
+        go func(ps chan core.Msg, data string) {
+            ps <- pubsub.PublishMsg{topic, data}
+        }(ps, msg)
 
-    if err != nil {
-        t.Errorf("Sent and published values do not match!\n%s", err.String())
+        // Receive and verify
+        go func() {
+            for {
+                select {
+                case iface := <-chans[0]:
+                    verify(t, msg, iface, verified)
+                case iface := <-chans[1]:
+                    verify(t, msg, iface, verified)
+                case iface := <-chans[2]:
+                    verify(t, msg, iface, verified)
+                }
+            }
+        }()
+
+        // Once a value has been sent len(chans) times, all chans are verified
+        for _ = range chans {
+            <-verified
+        }
+    }
+}
+
+func verify(t *testing.T, msg string, iface interface{}, verified chan bool) {
+    str := iface.(string)
+    if str == msg {
+        verified <- true
+    } else {
+        t.Fatalf("Sent message does not match received message, wanted: '%s'\ngot: '%s'", msg, str)
     }
 }
 
@@ -70,7 +86,7 @@ func TestUnsubscribe(t *testing.T) {
         if i == ch_i {
             continue
         }
-        go func(ch chan interface{}) {
+        go func(ch pubsub.ChanType) {
             <-ch
         }(ch)
     }
@@ -80,34 +96,12 @@ func TestUnsubscribe(t *testing.T) {
     quit <- true
 }
 
-// Relay proper messages to pubsub for testing purposes
-func startRelay(ps chan core.Msg, topic string) (relay chan interface{}) {
-    relay = make(chan interface{})
-    go func() {
-        for {
-            ps <- pubsub.PublishMsg{topic, <-relay}
-        }
-    }()
-    return
-}
-
 // Makes 'count' channels and subscribes them
-func makeAndSubscribe(ps chan core.Msg, topic string, count int) (chans []chan interface{}) {
+func makeAndSubscribe(ps chan core.Msg, topic string, count int) (chans []pubsub.ChanType) {
     for i := 0; i < count; i++ {
-        ch := make(chan interface{})
+        ch := make(pubsub.ChanType)
         ps <- pubsub.SubscribeMsg{topic, ch}
         chans = append(chans, ch)
-    }
-    return
-}
-
-// Makes receive events from an array of channels
-// Returns a ready list of events
-func makeRecvEvents(chans []chan interface{}, pre []*script.Event, data interface{}) (events []*script.Event) {
-    for i, ch := range chans {
-        name := fmt.Sprintf("recv %d", i)
-        ev := script.NewEvent(name, pre, script.Recv{ch, data})
-        events = append(events, ev)
     }
     return
 }
