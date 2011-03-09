@@ -45,21 +45,15 @@ type MsgAddAction struct {
 // slices.
 type MsgListEntities struct {
     Reply    chan Msg // Channel to reply on
-    Entities []chan Msg
-    Types    []EntityId
-    Names    []string
+    Entities []*EntityDesc
 }
 
 // Signals that a specific entity has been added to the game
 type MsgEntityAdded struct {
-    Id     int // Unique id for entity
-    Name   string
-    Entity chan Msg // Handle for entity
+    Entity *EntityDesc
 }
 
 // Signals that a specific entity has been removed from the game
 type MsgEntityRemoved struct {
-    Id     int // Unique id for entity
-    Name   string
-    Entity chan Msg // Handle for entity
+    Entity *EntityDesc
 }

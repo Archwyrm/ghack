@@ -30,7 +30,7 @@ func (x testState) Name() string     { return "TestState" }
 func TestObserver(t *testing.T) {
     svc := core.NewServiceContext()
     ent, ent_ch := createTestEntity(1)
-    go gameEmulator(t, svc, ent_ch, ent.Id(), ent.Name())
+    go gameEmulator(t, svc, ent_ch, ent)
     go pubsubEmulator(t, svc)
     client := make(chan core.Msg)
     obs := createObserver(svc, client)
@@ -42,7 +42,8 @@ func TestObserver(t *testing.T) {
 
     // Create entity and publish its addition
     ent2, ent_ch2 := createTestEntity(2)
-    add_msg := core.MsgEntityAdded{0, ent2.Name(), ent_ch2} // TODO: Id
+    desc := core.NewEntityDesc(ent2, ent_ch2)
+    add_msg := core.MsgEntityAdded{desc}
     svc.PubSub <- pubsub.PublishMsg{"entity", add_msg}
 
     // Expecting entity added and one state updated
@@ -50,7 +51,7 @@ func TestObserver(t *testing.T) {
     verifyStateUpdated(t, client, ent2)
 
     // Expecting entity removed
-    rm_msg := core.MsgEntityRemoved{0, ent2.Name(), ent_ch2} // TODO: Id
+    rm_msg := core.MsgEntityRemoved{desc}
     svc.PubSub <- pubsub.PublishMsg{"entity", rm_msg}
     verifyEntityRemoved(t, client, ent2)
 
@@ -121,6 +122,7 @@ func getMessage(t *testing.T, ch chan core.Msg) core.Msg {
 }
 
 func createTestEntity(value int) (core.Entity, chan core.Msg) {
+    // TODO: Id
     ent := NewTestEntity()
     ent.SetState(testState{value})
     ch := make(chan core.Msg)
@@ -129,17 +131,15 @@ func createTestEntity(value int) (core.Entity, chan core.Msg) {
 }
 
 // Masquerades as a game entity for testing purposes
-func gameEmulator(t *testing.T, svc core.ServiceContext, testEnt chan core.Msg,
-testId core.EntityId, testName string) {
+func gameEmulator(t *testing.T, svc core.ServiceContext, testCh chan core.Msg,
+testEnt core.Entity) {
     list, ok := (<-svc.Game).(core.MsgListEntities)
     if !ok {
         t.Fatal("Unexpected message sent to game service")
     }
 
-    list.Reply <- core.MsgListEntities{nil,
-        []chan core.Msg{testEnt},
-        []core.EntityId{testId},
-        []string{testName}}
+    desc := []*core.EntityDesc{core.NewEntityDesc(testEnt, testCh)}
+    list.Reply <- core.MsgListEntities{nil, desc}
 }
 
 // Masquerades as a pubsub service for testing purposes

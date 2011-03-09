@@ -78,16 +78,13 @@ func (g *Game) GameLoop() {
 }
 
 func (g *Game) makeEntityList() core.MsgListEntities {
-    list := g.GetState(cmpId.EntityList).(EntityList)
-    length := len(list.Entities)
-    chans := make([]chan core.Msg, 0, length)
-    ids := make([]core.EntityId, 0, length)
-    names := make([]string, 0, length)
+    list := g.GetState(cmpId.EntityList).(EntityList).Entities
+    ents := make([]*core.EntityDesc, len(list))
 
-    for ch, ent := range list.Entities {
-        chans = append(chans, ch)
-        ids = append(ids, 0) // TODO: Send proper unique id
-        names = append(names, ent.Name())
+    i := 0
+    for ch, ent := range list { // Fill the len(list) slots in ents
+        ents[i] = core.NewEntityDesc(ent, ch)
+        i++
     }
-    return core.MsgListEntities{nil, chans, ids, names}
+    return core.MsgListEntities{nil, ents}
 }

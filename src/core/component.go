@@ -143,3 +143,17 @@ func (cd *CmpData) sendAllStates(msg MsgGetAllStates) {
     }
     close(msg.StateReply)
 }
+
+// Entity descriptor, contains all the relevant information for a given entity
+// in one neat little package.
+type EntityDesc struct {
+    Chan   chan Msg
+    Id     int
+    TypeId EntityId
+    Name   string
+}
+
+// Returns a new entity descriptor based off a given entity and channel.
+func NewEntityDesc(ent Entity, ch chan Msg) *EntityDesc {
+    return &EntityDesc{ch, 0, ent.Id(), ent.Name()} // TODO: Id
+}
