@@ -158,10 +158,10 @@ func connect(svc core.ServiceContext, cs chan<- core.Msg, conn net.Conn) {
         panic("Login message not received!")
     }
     login := msg.Login
-    // TODO: Handle proper login here
+    logged_in, reason := startLogin(login)
 
     // Send login reply
-    msg = makeLoginResult(true, 0)
+    msg = makeLoginResult(logged_in, reason)
     sendMessageOrPanic(conn, msg)
 
     cs <- addClientMsg{newClient(svc, cs, conn, login)}
@@ -265,6 +265,12 @@ func prependByteLength(data []byte) ([]byte, os.Error) {
     }
     data = append(buf.Bytes(), data...)
     return data, nil
+}
+
+// Initiates a login and returns the result of the login attempt
+func startLogin(msg *protocol.Login) (bool, int32) {
+    // TODO: Talk to login service
+    return true, protocol.LoginResult_ACCEPTED // Logins are still always accepted ;(
 }
 
 // Represents remote client. Contains queue of messages to send and permission
