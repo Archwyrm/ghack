@@ -276,19 +276,31 @@ func startLogin(msg *protocol.Login) (bool, int32) {
 // Represents remote client. Contains queue of messages to send and permission
 // set governing what messages will be accepted and acted upon.
 type client struct {
-    name        string
-    conn        net.Conn
-    SendQueue   chan core.Msg
+    // Name of client or player name
+    name string
+    // conn transport to client
+    conn net.Conn
+    // Permission set mask
     permissions uint32
-    observer    chan core.Msg
+    // Queue of messages to be sent to client. observer fills this channel.
+    SendQueue chan core.Msg
+    // Msgs meant for observer specifically and *not* the client are sent here.
+    // e.g.: tick, quit, etc
+    observer chan core.Msg
 }
 
 // Create a new client and start up send/receive goroutines.
 func newClient(svc core.ServiceContext, cs chan<- core.Msg, conn net.Conn,
 l *protocol.Login) *client {
-    ch := make(chan core.Msg)
-    obs := createObserver(svc, ch)
-    cl := &client{*l.Name, conn, ch, proto.GetUint32(l.Permissions), obs}
+    send_ch := make(chan core.Msg)
+    obs := createObserver(svc, send_ch)
+    cl := &client{
+        name:        *l.Name,
+        permissions: proto.GetUint32(l.Permissions),
+        conn:        conn,
+        SendQueue:   send_ch,
+        observer:    obs,
+    }
     go cl.RecvLoop(cs)
     go cl.SendLoop(cs)
     return cl
