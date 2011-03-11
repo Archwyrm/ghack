@@ -10,7 +10,7 @@
 package pubsub
 
 import (
-    "core/core"
+    "core"
 )
 
 type ChanType chan core.Msg

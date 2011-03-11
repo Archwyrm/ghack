@@ -7,8 +7,8 @@ package pubsub_test
 import (
     "testing"
     "time"
-    "pubsub/pubsub"
-    "core/core"
+    "pubsub"
+    "core"
 )
 
 var testData = []string{

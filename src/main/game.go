@@ -8,8 +8,8 @@ import (
     "fmt"
     "time"
     "github.com/tm1rbrt/s3dm"
-    "core/core"
-    "cmpId/cmpId"
+    "core"
+    "cmpId"
 )
 
 // The core of the game

@@ -11,8 +11,8 @@ package comm
 
 import (
     "fmt"
-    "core/core"
-    "pubsub/pubsub"
+    "core"
+    "pubsub"
 )
 
 // Signal that an entity should be sent to a client

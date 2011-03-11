@@ -5,8 +5,8 @@
 package main
 
 import (
-    "core/core"
-    "cmpId/cmpId"
+    "core"
+    "cmpId"
 )
 
 // A plain component definition needs only four (reasonably) compact lines

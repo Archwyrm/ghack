@@ -5,7 +5,7 @@
 package comm
 
 import (
-    "protocol/protocol"
+    "protocol"
     "goprotobuf.googlecode.com/hg/proto"
 )
 

@@ -13,8 +13,8 @@ import (
     "encoding/binary"
     "bytes"
     "fmt"
-    "core/core"
-    "protocol/protocol"
+    "core"
+    "protocol"
     "goprotobuf.googlecode.com/hg/proto"
 )
 

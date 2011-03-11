@@ -10,8 +10,8 @@ package comm
 import (
     "testing"
     "reflect"
-    "core/core"
-    "protocol/protocol"
+    "core"
+    "protocol"
     "github.com/tm1rbrt/s3dm"
     "goprotobuf.googlecode.com/hg/proto"
 )

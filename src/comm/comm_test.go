@@ -8,8 +8,8 @@ import (
     "testing"
     "net"
     "time"
-    "protocol/protocol"
-    "core/core"
+    "protocol"
+    "core"
 )
 
 // Starts the server with a default ServiceContext for tests that don't need it

@@ -5,8 +5,8 @@
 package main
 
 import (
-    "core/core"
-    "cmpId/cmpId"
+    "core"
+    "cmpId"
     "github.com/tm1rbrt/s3dm"
 )
 

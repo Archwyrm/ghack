@@ -7,8 +7,8 @@ package comm
 import (
     "testing"
     "time"
-    "core/core"
-    "pubsub/pubsub"
+    "core"
+    "pubsub"
 )
 
 type testEntity struct {

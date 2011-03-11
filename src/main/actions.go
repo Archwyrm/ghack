@@ -6,8 +6,8 @@ package main
 
 import (
     "github.com/tm1rbrt/s3dm"
-    "core/core"
-    "cmpId/cmpId"
+    "core"
+    "cmpId"
 )
 
 type Move struct {

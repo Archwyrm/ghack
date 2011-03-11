@@ -7,9 +7,9 @@ package main
 
 import (
     "fmt"
-    "core/core"
-    "comm/comm"
-    "pubsub/pubsub"
+    "core"
+    "comm"
+    "pubsub"
 )
 
 func main() {
