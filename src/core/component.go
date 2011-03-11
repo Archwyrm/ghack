@@ -12,6 +12,8 @@ type StateId int
 type ActionId int
 // Identifies a single entity type
 type EntityId int
+// Identifies an individual entity instance
+type UniqueId int
 
 // Holds some kind of state data for a particular named property of an Entity.
 // Id() returns a unique ID for each Action (defined in cmpId package)
@@ -36,6 +38,7 @@ type Action interface {
 // An Entity is a struct composed from various States and Actions, which each
 // make up its data and functionality respectively.
 //
+// Uid() returns unique ID for each *instance* of an entity.
 // Id() returns a unique ID for each Entity (defined in cmpId package)
 // Name() returns a unique and semi-descriptive name for each Entity (defined
 // by each Entity)
@@ -44,6 +47,7 @@ type Action interface {
 // AddAction() adds the Action to the Entity.
 // RemoveAction() removes the Action from the Entity.
 type Entity interface {
+    Uid() UniqueId
     Id() EntityId
     Name() string
     GetState(id StateId) State
@@ -60,6 +64,7 @@ type ActionList map[ActionId]Action
 // Contains all the data that each component needs.
 // TODO: Rename to 'Component'?
 type CmpData struct {
+    uid UniqueId
     // Use maps for easy/add remove for now
     states  StateList
     actions ActionList
@@ -67,10 +72,10 @@ type CmpData struct {
 }
 
 // Creates a CmpData and initializes its containers.
-func NewCmpData() *CmpData {
+func NewCmpData(uid UniqueId) *CmpData {
     states := make(StateList)
     actions := make(ActionList)
-    return &CmpData{states, actions, nil}
+    return &CmpData{uid, states, actions, nil}
 }
 
 // Added to satisfy the Entity interface, clobbered by embedding.
@@ -79,6 +84,8 @@ func (cd CmpData) Id() EntityId { return 0 }
 func (cd CmpData) Name() string { return "CmpData" }
 
 // The next functions form the core functionality of a component.
+
+func (cd *CmpData) Uid() UniqueId { return cd.uid }
 
 // Returns the requested State. It is up to the caller to verify that the wanted
 // state was actually returned.
@@ -147,13 +154,13 @@ func (cd *CmpData) sendAllStates(msg MsgGetAllStates) {
 // Entity descriptor, contains all the relevant information for a given entity
 // in one neat little package.
 type EntityDesc struct {
-    Chan   chan Msg
-    Id     int
-    TypeId EntityId
-    Name   string
+    Chan chan Msg // Channel to entity
+    Uid  UniqueId // Unique id
+    Id   EntityId // Type id
+    Name string   // Name of entity
 }
 
 // Returns a new entity descriptor based off a given entity and channel.
 func NewEntityDesc(ent Entity, ch chan Msg) *EntityDesc {
-    return &EntityDesc{ch, 0, ent.Id(), ent.Name()} // TODO: Id
+    return &EntityDesc{ch, ent.Uid(), ent.Id(), ent.Name()}
 }

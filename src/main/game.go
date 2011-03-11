@@ -16,12 +16,14 @@ import (
 type Game struct {
     svc core.ServiceContext
     *core.CmpData
+    nextUid core.UniqueId
 }
 
 func (g Game) Id() core.EntityId { return cmpId.Game }
 func (g Game) Name() string      { return "Game" }
 func NewGame(svc core.ServiceContext) *Game {
-    return &Game{svc, core.NewCmpData()}
+    var uid core.UniqueId = 0 // Game uid is always zero
+    return &Game{svc, core.NewCmpData(uid), uid + 1}
 }
 
 func (g *Game) GameLoop() {
@@ -29,7 +31,7 @@ func (g *Game) GameLoop() {
     entities := NewEntityList()
     g.SetState(entities)
 
-    spider := NewSpider()
+    spider := NewSpider(g.getUid())
     spiderChan := make(chan core.Msg)
     entities.Entities[spiderChan] = spider
     go spider.Run(spiderChan)
@@ -87,4 +89,11 @@ func (g *Game) makeEntityList() core.MsgListEntities {
         i++
     }
     return core.MsgListEntities{nil, ents}
+}
+
+// Returns the next available unique id
+func (g *Game) getUid() core.UniqueId {
+    uid := g.nextUid
+    g.nextUid++
+    return uid
 }

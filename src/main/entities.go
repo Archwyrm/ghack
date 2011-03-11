@@ -14,14 +14,14 @@ type Player struct {
     *core.CmpData
 }
 
-func (p Player) Id() core.EntityId { return cmpId.Player }
-func (p Player) Name() string      { return "Player" }
-func NewPlayer() *Player           { return &Player{core.NewCmpData()} }
+func (p Player) Id() core.EntityId        { return cmpId.Player }
+func (p Player) Name() string             { return "Player" }
+func NewPlayer(uid core.UniqueId) *Player { return &Player{core.NewCmpData(uid)} }
 
 type Spider struct {
     *core.CmpData
 }
 
-func (p Spider) Id() core.EntityId { return cmpId.Spider }
-func (p Spider) Name() string      { return "Spider" }
-func NewSpider() *Spider           { return &Spider{core.NewCmpData()} }
+func (p Spider) Id() core.EntityId        { return cmpId.Spider }
+func (p Spider) Name() string             { return "Spider" }
+func NewSpider(uid core.UniqueId) *Spider { return &Spider{core.NewCmpData(uid)} }

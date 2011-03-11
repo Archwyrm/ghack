@@ -320,12 +320,12 @@ func (cl *client) SendLoop(cs chan<- core.Msg) {
         var err os.Error
         switch m := msg.(type) {
         case MsgAddEntity:
-            err = sendMessage(cl.conn, makeAddEntity(m.Id, m.Name))
+            err = sendMessage(cl.conn, makeAddEntity(int32(m.Uid), m.Name))
         case MsgRemoveEntity:
-            err = sendMessage(cl.conn, makeRemoveEntity(m.Id, m.Name))
+            err = sendMessage(cl.conn, makeRemoveEntity(int32(m.Uid), m.Name))
         case MsgUpdateState:
             value := packState(m.State)
-            err = sendMessage(cl.conn, makeUpdateState(m.Id, m.State.Name(), value))
+            err = sendMessage(cl.conn, makeUpdateState(int32(m.Uid), m.State.Name(), value))
         }
         // Remove client if something went wrong
         if err != nil {

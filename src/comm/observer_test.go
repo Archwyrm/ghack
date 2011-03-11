@@ -17,7 +17,10 @@ type testEntity struct {
 
 func (x testEntity) Id() core.EntityId { return 0 }
 func (x testEntity) Name() string      { return "TestEntity" }
-func NewTestEntity() *testEntity       { return &testEntity{core.NewCmpData()} }
+
+func NewTestEntity(uid core.UniqueId) *testEntity {
+    return &testEntity{core.NewCmpData(uid)}
+}
 
 type testState struct {
     Value int
@@ -25,6 +28,8 @@ type testState struct {
 
 func (x testState) Id() core.StateId { return 0 }
 func (x testState) Name() string     { return "TestState" }
+
+var nextUid core.UniqueId = 1
 
 // Test replicating entity data through observers up through the initial sync.
 func TestObserver(t *testing.T) {
@@ -72,9 +77,11 @@ func verifyEntityAdded(t *testing.T, client chan core.Msg, ent core.Entity) {
     if m, ok := msg.(MsgAddEntity); !ok {
         t.Fatal("No entity added")
     } else {
-        // TODO: Check Id
+        if ent.Uid() != m.Uid {
+            t.Errorf("Entity added: Uids do not match: Ent %v != Msg %v", ent.Uid(), m.Uid)
+        }
         if ent.Name() != m.Name {
-            t.Errorf("Entity added: Types do not match: %s != %s", ent.Name(), m.Name)
+            t.Errorf("Entity added: Types do not match: Ent %s != Msg %s", ent.Name(), m.Name)
         }
     }
 }
@@ -84,9 +91,11 @@ func verifyEntityRemoved(t *testing.T, client chan core.Msg, ent core.Entity) {
     if m, ok := msg.(MsgRemoveEntity); !ok {
         t.Fatal("No entity removed")
     } else {
-        // TODO: Check Id
+        if ent.Uid() != m.Uid {
+            t.Errorf("Entity removed: Uids do not match: Ent %v != Msg %v", ent.Uid(), m.Uid)
+        }
         if ent.Name() != m.Name {
-            t.Errorf("Entity removed: Types do not match: %s != %s", ent.Name(), m.Name)
+            t.Errorf("Entity removed: Types do not match: Ent %s != Msg %s", ent.Name(), m.Name)
         }
     }
 }
@@ -96,7 +105,9 @@ func verifyStateUpdated(t *testing.T, client chan core.Msg, ent core.Entity) {
     if m, ok := msg.(MsgUpdateState); !ok {
         t.Fatal("No state update received")
     } else {
-        // TODO: Check Id
+        if ent.Uid() != m.Uid {
+            t.Errorf("State update: Uids do not match: Ent %v != Msg %v", ent.Uid(), m.Uid)
+        }
         var state testState
         state = ent.GetState(state.Id()).(testState)
         mstate, ok := m.State.(testState)
@@ -122,8 +133,8 @@ func getMessage(t *testing.T, ch chan core.Msg) core.Msg {
 }
 
 func createTestEntity(value int) (core.Entity, chan core.Msg) {
-    // TODO: Id
-    ent := NewTestEntity()
+    ent := NewTestEntity(nextUid)
+    nextUid++
     ent.SetState(testState{value})
     ch := make(chan core.Msg)
     go ent.Run(ch)

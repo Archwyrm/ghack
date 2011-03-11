@@ -18,20 +18,20 @@ import (
 // Signal that an entity should be sent to a client
 // TODO: Combine with core.MsgEntityAdded somehow?
 type MsgAddEntity struct {
-    Id   int32 // Unique Id
+    Uid  core.UniqueId
     Name string
 }
 
 // Signal that an entity should be removed from a client
 // TODO: Combine with core.MsgEntityRemoved somehow?
 type MsgRemoveEntity struct {
-    Id   int32 // Unique Id
+    Uid  core.UniqueId
     Name string
 }
 
 // Signal that a state should have its value updated on a client
 type MsgUpdateState struct {
-    Id    int32      // Unique Id
+    Uid   core.UniqueId
     State core.State // Contains Name and Value needed for protocol
 }
 
@@ -42,7 +42,7 @@ type observer struct {
     // The client on whose behalf this observer replicates
     client chan core.Msg
     // Maps the entity to its view's control channel
-    // TODO: Store by Id, not chan?
+    // TODO: Store by Uid, not chan?
     views map[chan core.Msg]chan core.Msg
     // Channel to control this observer
     ctrl chan core.Msg
@@ -66,7 +66,7 @@ func (obs *observer) init() {
         panic("Request received incorrect reply")
     }
     for _, ent := range list.Entities {
-        if checkBlacklist(ent.TypeId) {
+        if checkBlacklist(ent.Id) {
             continue
         }
         obs.addView(ent)
@@ -86,12 +86,12 @@ func (obs *observer) observe() {
             }
         case core.MsgEntityAdded:
             ent := m.Entity
-            if checkBlacklist(0) { // TODO: Check proper type id
+            if checkBlacklist(ent.Id) {
                 continue
             }
             if _, present := obs.views[ent.Chan]; present {
                 str := "Duplicate MsgEntityAdded received, entity already has view:\n"
-                str = fmt.Sprint(str, ent.Id, " ", ent.Name)
+                str = fmt.Sprint(str, ent.Uid, " ", ent.Name)
                 panic(str)
             }
             obs.addView(ent)
@@ -102,22 +102,22 @@ func (obs *observer) observe() {
                 ch <- core.MsgQuit{}
             } else {
                 str := "Tried to remove an unadded entity:\n"
-                str = fmt.Sprint(str, ent.Id, " ", ent.Name)
+                str = fmt.Sprint(str, ent.Uid, " ", ent.Name)
                 panic(str)
             }
             obs.views[ent.Chan] = nil, false
-            obs.client <- MsgRemoveEntity{int32(ent.Id), ent.Name}
+            obs.client <- MsgRemoveEntity{ent.Uid, ent.Name}
         }
     }
 }
 
 // Creates a new view and starts it replicating
 func (obs *observer) addView(ent *core.EntityDesc) {
-    obs.client <- MsgAddEntity{int32(ent.Id), ent.Name}
+    obs.client <- MsgAddEntity{ent.Uid, ent.Name}
     v := &view{client: obs.client, entity: ent.Chan}
     v_ch := make(chan core.Msg)
     obs.views[ent.Chan] = v_ch
-    go v.replicate(v_ch)
+    go v.replicate(ent.Uid, v_ch)
 }
 
 // Checks to see if this entity is blacklisted
@@ -134,11 +134,11 @@ type view struct {
     states core.StateList // Current value of each replicated state
 }
 
-func (v *view) replicate(ctrl chan core.Msg) {
+func (v *view) replicate(uid core.UniqueId, ctrl chan core.Msg) {
     v.states = make(core.StateList)
     request := core.MsgGetAllStates{}
-    // TODO: Set Id as this is always the same for a given view
     msg := MsgUpdateState{}
+    msg.Uid = uid
 
     for {
         reply := make(chan core.State)
