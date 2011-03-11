@@ -6,6 +6,7 @@ package main
 
 import (
     "fmt"
+    "log"
     "time"
     "github.com/tm1rbrt/s3dm"
     "core"
@@ -48,6 +49,7 @@ func (g *Game) GameLoop() {
 
     for {
         // Tell all the entities that a new tick has started
+        ent_num := len(entities.Entities) // Store ent count for *this* tick
         for ent := range entities.Entities {
             ent <- tick_msg
         }
@@ -59,13 +61,15 @@ func (g *Game) GameLoop() {
             switch m := msg.(type) {
             case core.MsgTick:
                 updated[m.Origin] = true // bool value doesn't matter
-                if len(updated) == len(entities.Entities) {
-                    // Clear out list
+                if len(updated) == ent_num {
+                    // Clear out list, use current number of entities for next tick
                     updated = make(map[chan core.Msg]bool, len(entities.Entities))
                     goto update_end
                 }
             case core.MsgListEntities:
                 m.Reply <- g.makeEntityList()
+            case core.MsgSpawnPlayer:
+                g.spawnPlayer(m)
             }
         }
     update_end:
@@ -96,4 +100,20 @@ func (g *Game) getUid() core.UniqueId {
     uid := g.nextUid
     g.nextUid++
     return uid
+}
+
+// Starting to get somewhat game specific?
+
+// Creates a new player entity for a requesting client
+func (g *Game) spawnPlayer(msg core.MsgSpawnPlayer) {
+    // Lines like the following are rather unwieldy.. Somewhat of an argument for
+    // making game a service rather than an entity
+    list := g.GetState(cmpId.EntityList).(EntityList).Entities
+    p := NewPlayer(g.getUid())
+    ch := make(chan core.Msg)
+    list[ch] = p
+    go p.Run(ch)
+    // TODO: Send entity channel when there is something listening on the other end of Reply..
+    //msg.Reply <- ch
+    log.Printf("%s joined the game", msg.Name)
 }

@@ -14,7 +14,7 @@ import (
 // not shared references. Currently used by the Game entity to contain all
 // other entities.
 type EntityList struct {
-    Entities map[chan core.Msg]core.Entity
+    Entities map[chan core.Msg]core.Entity // TODO: Use uid as key rather than chan?
 }
 
 func (p EntityList) Id() core.StateId { return cmpId.EntityList }

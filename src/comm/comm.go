@@ -165,6 +165,7 @@ func connect(svc core.ServiceContext, cs chan<- core.Msg, conn net.Conn) {
     sendMessageOrPanic(conn, msg)
 
     cs <- addClientMsg{newClient(svc, cs, conn, login)}
+    svc.Game <- core.MsgSpawnPlayer{*login.Name, nil}
 }
 
 // Recovers from fatal errors, logs them, and closes the connection

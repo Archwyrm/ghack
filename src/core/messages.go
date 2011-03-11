@@ -57,3 +57,9 @@ type MsgEntityAdded struct {
 type MsgEntityRemoved struct {
     Entity *EntityDesc
 }
+
+// Requests that a player be created for a client
+type MsgSpawnPlayer struct {
+    Name  string
+    Reply chan chan Msg
+}
