@@ -13,6 +13,7 @@ import (
     "fmt"
     "core"
     "pubsub"
+    "util"
 )
 
 // Signal that an entity should be sent to a client
@@ -84,10 +85,14 @@ func (obs *observer) observe() {
             for _, v := range obs.views {
                 v <- msg
             }
-        case core.MsgQuit: // Pass quit msg to views
+        case core.MsgQuit: // Client has disconnected, shut everything down
+            // Views may have pending updates, drain and discard
+            go util.DrainUntilQuit(obs.client)
             for _, v := range obs.views {
                 v <- msg
             }
+            // Close the drain now that all views have gotten quit msg
+            obs.client <- msg
             return
         case core.MsgEntityAdded:
             ent := m.Entity
@@ -168,7 +173,6 @@ func (v *view) replicate(uid core.UniqueId, ctrl chan core.Msg) {
         // Listen for next update signal
         msg := <-ctrl
         if _, ok := msg.(core.MsgQuit); ok {
-            v.client <- msg // Forward quit message
             return
         }
     }
