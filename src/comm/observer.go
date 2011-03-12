@@ -84,6 +84,11 @@ func (obs *observer) observe() {
             for _, v := range obs.views {
                 v <- msg
             }
+        case core.MsgQuit: // Pass quit msg to views
+            for _, v := range obs.views {
+                v <- msg
+            }
+            return
         case core.MsgEntityAdded:
             ent := m.Entity
             if checkBlacklist(ent.Id) {
@@ -163,6 +168,7 @@ func (v *view) replicate(uid core.UniqueId, ctrl chan core.Msg) {
         // Listen for next update signal
         msg := <-ctrl
         if _, ok := msg.(core.MsgQuit); ok {
+            v.client <- msg // Forward quit message
             return
         }
     }

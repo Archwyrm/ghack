@@ -16,6 +16,7 @@ import (
     "core"
     "protocol"
     "goprotobuf.googlecode.com/hg/proto"
+    "util"
 )
 
 const (
@@ -93,6 +94,10 @@ func (cs *CommService) removeClient(msg removeClientMsg) {
         msg.reason = ": " + msg.reason
     }
     log.Println(msg.cl.name, "disconnected"+msg.reason)
+
+    // Close this client's observer and drain any unhandled messages
+    go util.DrainUntilQuit(msg.cl.SendQueue)
+    msg.cl.observer <- core.MsgQuit{}
 }
 
 func listen(svc core.ServiceContext, cs chan<- core.Msg, protocol string,
