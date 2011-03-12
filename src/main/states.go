@@ -30,3 +30,11 @@ type Position struct {
 
 func (p Position) Id() core.StateId { return cmpId.Position }
 func (p Position) Name() string     { return "Position" }
+
+// The asset used to represent (or draw) the entity to which this state belongs.
+type Asset struct {
+    Asset string
+}
+
+func (x Asset) Id() core.StateId { return cmpId.Asset }
+func (x Asset) Name() string     { return "Asset" }

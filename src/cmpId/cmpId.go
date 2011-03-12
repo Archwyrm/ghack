@@ -11,6 +11,7 @@ const (
     State = iota
     EntityList
     Position
+    Asset
 )
 
 // Actions

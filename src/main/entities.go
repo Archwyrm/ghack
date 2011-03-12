@@ -14,14 +14,24 @@ type Player struct {
     *core.CmpData
 }
 
-func (p Player) Id() core.EntityId        { return cmpId.Player }
-func (p Player) Name() string             { return "Player" }
-func NewPlayer(uid core.UniqueId) *Player { return &Player{core.NewCmpData(uid)} }
+func (p Player) Id() core.EntityId { return cmpId.Player }
+func (p Player) Name() string      { return "Player" }
+
+func NewPlayer(uid core.UniqueId) *Player {
+    p := &Player{core.NewCmpData(uid)}
+    p.SetState(Asset{"@"})
+    return p
+}
 
 type Spider struct {
     *core.CmpData
 }
 
-func (p Spider) Id() core.EntityId        { return cmpId.Spider }
-func (p Spider) Name() string             { return "Spider" }
-func NewSpider(uid core.UniqueId) *Spider { return &Spider{core.NewCmpData(uid)} }
+func (p Spider) Id() core.EntityId { return cmpId.Spider }
+func (p Spider) Name() string      { return "Spider" }
+
+func NewSpider(uid core.UniqueId) *Spider {
+    s := &Spider{core.NewCmpData(uid)}
+    s.SetState(Asset{"s"})
+    return s
+}
