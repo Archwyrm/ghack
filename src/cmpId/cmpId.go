@@ -12,6 +12,9 @@ const (
     EntityList
     Position
     Asset
+    Health
+    MaxHealth
+    KillCount
 )
 
 // Actions

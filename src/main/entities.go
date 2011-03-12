@@ -20,6 +20,9 @@ func (p Player) Name() string      { return "Player" }
 func NewPlayer(uid core.UniqueId) *Player {
     p := &Player{core.NewCmpData(uid)}
     p.SetState(Asset{"@"})
+    p.SetState(Health{10})
+    p.SetState(MaxHealth{10})
+    p.SetState(KillCount{0})
     return p
 }
 
@@ -33,5 +36,7 @@ func (p Spider) Name() string      { return "Spider" }
 func NewSpider(uid core.UniqueId) *Spider {
     s := &Spider{core.NewCmpData(uid)}
     s.SetState(Asset{"s"})
+    s.SetState(Health{10})
+    s.SetState(MaxHealth{10})
     return s
 }
