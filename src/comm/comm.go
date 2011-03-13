@@ -167,8 +167,10 @@ func connect(svc core.ServiceContext, cs chan<- core.Msg, conn net.Conn) {
     msg = makeLoginResult(logged_in, reason)
     sendMessageOrPanic(conn, msg)
 
-    cs <- addClientMsg{newClient(svc, cs, conn, login)}
-    svc.Game <- core.MsgSpawnPlayer{*login.Name, nil}
+    cl := newClient(svc, cs, conn, login)
+    cs <- addClientMsg{cl}
+    // TODO: Allowing a game entity to talk directly to a client may not be the best thing..
+    svc.Game <- core.MsgSpawnPlayer{*login.Name, cl.SendQueue}
 }
 
 // Recovers from fatal errors, logs them, and closes the connection
@@ -348,6 +350,9 @@ func (cl *client) SendLoop(cs chan<- core.Msg) {
         case MsgUpdateState:
             value := packState(m.State)
             err = sendMessage(cl.conn, makeUpdateState(int32(m.Uid), m.State.Name(), value))
+        case core.MsgAssignControl:
+            println("assigning control of", m.Uid)
+            err = sendMessage(cl.conn, makeAssignControl(int32(m.Uid), m.Revoked))
         }
         // Remove client if something went wrong
         if err != nil {

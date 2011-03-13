@@ -113,7 +113,8 @@ func (g *Game) spawnPlayer(msg core.MsgSpawnPlayer) {
     ch := make(chan core.Msg)
     list[ch] = p
     go p.Run(ch)
-    // TODO: Send entity channel when there is something listening on the other end of Reply..
-    //msg.Reply <- ch
+    go func(uid core.UniqueId) {
+        msg.Reply <- core.MsgAssignControl{uid, false}
+    }(p.Uid())
     log.Printf("%s joined the game", msg.Name)
 }

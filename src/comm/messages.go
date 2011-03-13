@@ -92,3 +92,15 @@ func makeUpdateState(id int32, stateId string, value *protocol.StateValue) (msg 
         Type:        protocol.NewMessage_Type(protocol.Message_UPDATESTATE),
     }
 }
+
+func makeAssignControl(uid int32, revoked bool) (msg *protocol.Message) {
+    ctrl := &protocol.AssignControl{
+        Uid:     &uid,
+        Revoked: &revoked,
+    }
+
+    return &protocol.Message{
+        AssignControl: ctrl,
+        Type:          protocol.NewMessage_Type(protocol.Message_ASSIGNCONTROL),
+    }
+}

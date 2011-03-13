@@ -61,5 +61,11 @@ type MsgEntityRemoved struct {
 // Requests that a player be created for a client
 type MsgSpawnPlayer struct {
     Name  string
-    Reply chan chan Msg
+    Reply chan Msg
+}
+
+// Assigns control of this entity to a client
+type MsgAssignControl struct {
+    Uid     UniqueId // Entity to be given to a client
+    Revoked bool     // True, if control is to be removed
 }

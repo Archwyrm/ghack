@@ -2,6 +2,11 @@
 // Use of this source code is governed by the GNU General Public License
 // version 3 (or any later version). See the file COPYING for details.
 
+// !!! WARNING !!!
+// The protocol is still under development and will change frequently, sometimes
+// with breaking changes and will *not*change version number until considered stable..
+// !!! WARNING !!!
+
 // Protocol version 1
 //
 // This file contains the Protocol Buffer definitions necessary for remote
@@ -64,6 +69,7 @@ message Message {
         REMOVEENTITY = 6;
         UPDATESTATE = 7;
         MOVE = 8;
+        ASSIGNCONTROL = 9;
     }
 
     // Type of message that this contains
@@ -80,6 +86,7 @@ message Message {
     optional Disconnect disconnect = 17;
     optional Login login = 18;
     optional LoginResult login_result = 19;
+    optional AssignControl assign_control = 20;
 }
 
 message Connect {
@@ -173,4 +180,12 @@ message Vector3 {
 // Sends the client's movement intention to the server.
 message Move {
     required Vector3 direction = 1;
+}
+
+// Tells the client that the referenced entity may be controlled by it.
+message AssignControl {
+    // Entity's unique id
+    required int32 uid = 1;
+    // If set, and set to true, control of the entity has been revoked
+    optional bool revoked = 2;
 }
