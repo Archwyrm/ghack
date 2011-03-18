@@ -77,7 +77,6 @@ func (obs *observer) init() {
 
 func (obs *observer) observe() {
     obs.init()
-    // TODO: Listen for entities added or removed
     for {
         msg := <-obs.ctrl
         switch m := msg.(type) {

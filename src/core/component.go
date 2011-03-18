@@ -16,43 +16,43 @@ type EntityId int
 type UniqueId int
 
 // Holds some kind of state data for a particular named property of an Entity.
-// Id() returns a unique ID for each Action (defined in cmpId package)
-// Name() returns a unique and semi-descriptive name for each Action (defined
-// by each Entity)
 type State interface {
+    // Returns a unique ID for each Action (defined in cmpId package)
     Id() StateId
+    // Returns a unique and semi-descriptive name for each Action (defined by
+    // the State)
     Name() string
 }
 
 // The Action enacts changes in Entity state. It may be considered a
 // transactional state change, or since it arrives by message, a closure.
-// Id() returns a unique ID for each Action (defined in cmpId package)
-// Name() returns a unique and semi-descriptive name for each Action (defined
-// by each Entity)
 type Action interface {
+    // Returns a unique ID for each Action (defined in cmpId package)
     Id() ActionId
+    // Returns a unique and semi-descriptive name for each Action (defined by
+    // the Action)
     Name() string
     Act(ent Entity)
 }
 
 // An Entity is a struct composed from various States and Actions, which each
 // make up its data and functionality respectively.
-//
-// Uid() returns unique ID for each *instance* of an entity.
-// Id() returns a unique ID for each Entity (defined in cmpId package)
-// Name() returns a unique and semi-descriptive name for each Entity (defined
-// by each Entity)
-// GetState() returns the requested State or nil if it does not exist.
-// SetState() sets the value of the passed State within the Entity.
-// AddAction() adds the Action to the Entity.
-// RemoveAction() removes the Action from the Entity.
 type Entity interface {
+    // Returns unique ID for the *instance* of this entity
     Uid() UniqueId
+    // Returns a unique entity type ID (defined in cmpId package)
     Id() EntityId
+    // Name() returns a unique and semi-descriptive name for each Entity (defined
+    // by the Entity)
     Name() string
+    // Returns the requested State by ID or nil if it does not exist
     GetState(id StateId) State
+    // Sets the value of the passed State within the Entity. Overwrites any
+    // previous state with the same ID.
     SetState(state State)
+    // Adds the Action to the Entity.
     AddAction(action Action)
+    // Removes the Action from the Entity.
     RemoveAction(action Action)
 }
 
