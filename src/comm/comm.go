@@ -338,9 +338,6 @@ func (cl *client) SendLoop(cs chan<- core.Msg) {
     defer logAndClose(cl.conn)
     for {
         msg := <-cl.SendQueue
-        if msg == nil && closed(cl.SendQueue) {
-            return
-        }
         var err os.Error
         switch m := msg.(type) {
         case MsgAddEntity:
@@ -356,7 +353,7 @@ func (cl *client) SendLoop(cs chan<- core.Msg) {
         }
         // Remove client if something went wrong
         if err != nil {
-            cs <- removeClientMsg{cl, "Reading message from client failed: " + err.String()}
+            cs <- removeClientMsg{cl, "Sending message to client failed: " + err.String()}
             return
         }
     }
