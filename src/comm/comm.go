@@ -348,7 +348,6 @@ func (cl *client) SendLoop(cs chan<- core.Msg) {
             value := packState(m.State)
             err = sendMessage(cl.conn, makeUpdateState(int32(m.Uid), m.State.Name(), value))
         case core.MsgAssignControl:
-            println("assigning control of", m.Uid)
             err = sendMessage(cl.conn, makeAssignControl(int32(m.Uid), m.Revoked))
         }
         // Remove client if something went wrong
