@@ -2,7 +2,8 @@
 // Use of this source code is governed by the GNU General Public License
 // version 3 (or any later version). See the file COPYING for details.
 
-package main
+// Spider Forest package. Contains all code specific to the Spider Forest gameplay.
+package sf
 
 import (
     "github.com/tm1rbrt/s3dm"
@@ -10,7 +11,6 @@ import (
     "cmpId"
 )
 
-// A plain component definition needs only four (reasonably) compact lines
 type Player struct {
     *core.CmpData
 }
@@ -28,6 +28,7 @@ func NewPlayer(uid core.UniqueId) *Player {
     return p
 }
 
+// A plain component definition needs only four (reasonably) compact lines
 type Spider struct {
     *core.CmpData
 }

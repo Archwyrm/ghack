@@ -2,7 +2,7 @@
 // Use of this source code is governed by the GNU General Public License
 // version 3 (or any later version). See the file COPYING for details.
 
-package main
+package sf
 
 import (
     "github.com/tm1rbrt/s3dm"

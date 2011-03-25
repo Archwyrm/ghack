@@ -54,6 +54,8 @@ type Entity interface {
     AddAction(action Action)
     // Removes the Action from the Entity.
     RemoveAction(action Action)
+    // Runs the Entity's main loop where its communication channel is passed
+    Run(input chan Msg)
 }
 
 // Simplified declaration
