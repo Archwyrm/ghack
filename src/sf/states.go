@@ -6,7 +6,7 @@ package sf
 
 import (
     "core"
-    "cmpId"
+    "sf/cmpId"
     "github.com/tm1rbrt/s3dm"
 )
 

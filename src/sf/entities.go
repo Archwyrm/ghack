@@ -8,7 +8,7 @@ package sf
 import (
     "github.com/tm1rbrt/s3dm"
     "core"
-    "cmpId"
+    "sf/cmpId"
 )
 
 type Player struct {
