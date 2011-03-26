@@ -9,6 +9,7 @@ import (
     "net"
     "time"
     "protocol"
+    "pubsub"
     "core"
 )
 
@@ -24,6 +25,11 @@ ctx core.ServiceContext) (svc *CommService, cs chan core.Msg) {
     svc = NewCommService(ctx, ":9190")
     cs = ctx.Comm
     go svc.Run(cs)
+
+    // Start game and pubsub so observers don't lock up
+    go core.NewGame(ctx).Run(ctx.Game)
+    go pubsub.NewPubSub().Run(ctx.PubSub)
+
     // Give time for the service to start listening
     time.Sleep(1e8) // 100 ms
     return svc, cs
