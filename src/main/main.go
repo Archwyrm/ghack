@@ -31,7 +31,7 @@ func initGameSvc(g *core.Game) {
     spider := sf.NewSpider(g.GetUid())
     spiderChan := make(chan core.Msg)
     g.AddEntity(spider, spiderChan)
-    spider.AddAction(&sf.Move{&s3dm.V3{1, 1, 1}})
+    spider.AddAction(sf.Move{s3dm.NewV3(1, 1, 1)})
     go spider.Run(spiderChan)
 }
 
