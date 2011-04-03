@@ -89,8 +89,6 @@ func (g *Game) GetUid() UniqueId {
 
 // Creates a new player entity for a requesting client
 func (g *Game) spawnPlayer(msg MsgSpawnPlayer) {
-    // Lines like the following are rather unwieldy.. Somewhat of an argument for
-    // making game a service rather than an entity
     if g.PlayerFunc == nil {
         return // Skip spawning a player
     }
