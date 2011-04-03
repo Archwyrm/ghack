@@ -16,7 +16,7 @@ import (
 func main() {
     svc := core.NewServiceContext()
 
-    go comm.NewCommService(svc, ":9190").Run(svc.Comm)
+    go comm.NewCommService(svc, "0.0.0.0:9190").Run(svc.Comm)
     go pubsub.NewPubSub().Run(svc.PubSub)
 
     game := core.NewGame(svc)
