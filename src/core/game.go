@@ -8,6 +8,9 @@ import (
     "time"
 )
 
+var tick_rate int64 = 60            // Ticks per second
+var skip_ns int64 = 1e9 / tick_rate // Nanosecond interval per tick
+
 // Manages game data and runs the main loop.
 type Game struct {
     svc     ServiceContext
@@ -30,6 +33,8 @@ func (g *Game) Run(input chan Msg) {
     tick_msg := MsgTick{input}
 
     for {
+        tick_start := time.Nanoseconds()
+
         // Tell all the entities that a new tick has started
         ent_num := len(g.ents) // Store ent count for *this* tick
         for ent := range g.ents {
@@ -57,8 +62,8 @@ func (g *Game) Run(input chan Msg) {
     update_end:
         g.svc.Comm <- tick_msg
 
-        // TODO: Proper time based ticks
-        time.Sleep(3e9) // 3s
+        sleep_ns := (tick_start + skip_ns) - time.Nanoseconds()
+        time.Sleep(sleep_ns)
     }
 }
 
