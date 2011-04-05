@@ -47,7 +47,7 @@ func (a *avatar) control(ctrl <-chan core.Msg, input <-chan *protocol.Message) {
             case protocol.Message_Type(protocol.Message_MOVE):
                 dir := msg.Move.Direction
                 vec := s3dm.NewV3(*dir.X, *dir.Y, *dir.Z)
-                a.player <- core.MsgAddAction{Move{vec}}
+                a.player <- core.MsgRunAction{Move{vec}, false}
             default:
                 log.Println("Client sent unhandled message, ignoring:",
                     protocol.Message_Type_name[int32(*msg.Type)])

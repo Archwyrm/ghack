@@ -128,6 +128,11 @@ func (cd *CmpData) Run(input chan Msg) {
             cd.sendAllStates(m)
         case MsgAddAction:
             cd.AddAction(m.Action)
+        case MsgRunAction:
+            m.Action.Act(cd)
+            if m.Add {
+                cd.AddAction(m.Action)
+            }
         }
     }
 }

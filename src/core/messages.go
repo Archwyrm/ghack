@@ -39,6 +39,13 @@ type MsgAddAction struct {
     Action Action
 }
 
+// Requests that the action be run immediately. Will be optionally added for
+// re-use depending on the Add variable.
+type MsgRunAction struct {
+    Action Action
+    Add    bool
+}
+
 // Requests and returns a list of entity handles (channels), types, and names.
 // Message with an empty list is considered a request, while non-empty contains
 // an actual list. Each triple of lists has matching indices in their respective
