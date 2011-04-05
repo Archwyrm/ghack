@@ -26,6 +26,9 @@ const (
 )
 
 var byteOrder = binary.LittleEndian
+// Game specific function for creating an avatar, set by game code.
+var AvatarFunc func(core.ServiceContext, chan *protocol.Message) (chan core.Msg,
+core.UniqueId) = dummyAvatarFunc
 
 // addClient and removeClient are internal messages for manipulating the list
 // of clients in a thread safe way
@@ -169,8 +172,6 @@ func connect(svc core.ServiceContext, cs chan<- core.Msg, conn net.Conn) {
 
     cl := newClient(svc, cs, conn, login)
     cs <- addClientMsg{cl}
-    // TODO: Allowing a game entity to talk directly to a client may not be the best thing..
-    svc.Game <- core.MsgSpawnPlayer{*login.Name, cl.SendQueue}
 }
 
 // Recovers from fatal errors, logs them, and closes the connection
@@ -290,25 +291,42 @@ type client struct {
     permissions uint32
     // Queue of messages to be sent to client. observer fills this channel.
     SendQueue chan core.Msg
+    // Queue of messages received from client. avatar drains this channel.
+    // Messages are passed in their original protocol form as we cannot
+    // anticipate game defined messages here.
+    RecvQueue chan *protocol.Message
     // Msgs meant for observer specifically and *not* the client are sent here.
     // e.g.: tick, quit, etc
     observer chan core.Msg
+    // Control channel for avatar
+    avatar chan core.Msg
 }
 
 // Create a new client and start up send/receive goroutines.
 func newClient(svc core.ServiceContext, cs chan<- core.Msg, conn net.Conn,
 l *protocol.Login) *client {
     send_ch := make(chan core.Msg)
+    recv_ch := make(chan *protocol.Message)
     obs := createObserver(svc, send_ch)
+    avatar, uid := AvatarFunc(svc, recv_ch)
     cl := &client{
         name:        *l.Name,
         permissions: proto.GetUint32(l.Permissions),
         conn:        conn,
         SendQueue:   send_ch,
+        RecvQueue:   recv_ch,
         observer:    obs,
+        avatar:      avatar,
     }
     go cl.RecvLoop(cs)
     go cl.SendLoop(cs)
+
+    // Only attempt to assign control if a real avatar channel was returned,
+    // otherwise the uid is just a dummy and should not be sent. This mostly
+    // applies to tests.
+    if avatar != nil {
+        send_ch <- core.MsgAssignControl{uid, false}
+    }
     return cl
 }
 
@@ -327,8 +345,9 @@ func (cl *client) RecvLoop(cs chan<- core.Msg) {
             cs <- removeClientMsg{cl, proto.GetString(msg.Disconnect.ReasonStr)}
             return
         default:
-            log.Println("Client sent unhandled message, ignoring:",
-                protocol.Message_Type_name[int32(*msg.Type)])
+            // TODO: If no proper avatar has been started, this will block, fix?
+            // We could check cl.avatar for nil
+            cl.RecvQueue <- msg // Forward to avatar
         }
     }
 }
@@ -356,4 +375,11 @@ func (cl *client) SendLoop(cs chan<- core.Msg) {
             return
         }
     }
+}
+
+// Return default values to satisfy tests, if returned chan is used, will cause
+// panic (of course)
+func dummyAvatarFunc(core.ServiceContext, chan *protocol.Message) (chan core.Msg,
+core.UniqueId) {
+    return nil, 1
 }

@@ -5,7 +5,6 @@
 package core
 
 import (
-    "log"
     "time"
 )
 
@@ -97,7 +96,6 @@ func (g *Game) spawnPlayer(msg MsgSpawnPlayer) {
     g.ents[ch] = p
     go p.Run(ch)
     go func(uid UniqueId) {
-        msg.Reply <- MsgAssignControl{uid, false}
+        msg.Reply <- &EntityDesc{ch, p.Uid(), p.Id(), p.Name()}
     }(p.Uid())
-    log.Printf("%s joined the game", msg.Name)
 }
