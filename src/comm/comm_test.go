@@ -39,7 +39,7 @@ ctx core.ServiceContext) (svc *CommService, cs chan core.Msg) {
 
 func newTestClient(t *testing.T) (fd net.Conn) {
     // Connect to the listening service and send
-    fd, err := net.Dial("tcp", "", "localhost:9190")
+    fd, err := net.Dial("tcp", "localhost:9190")
     if err != nil {
         t.Fatalf("Could not connect to comm:", err)
     }
@@ -153,7 +153,7 @@ func TestServerQuit(t *testing.T) {
     }
 
     go func() {
-        _, err := net.Dial("tcp", "", "localhost:9190")
+        _, err := net.Dial("tcp", "localhost:9190")
         if err == nil {
             t.Fatalf("Server didn't shut down")
         }
