@@ -8,9 +8,11 @@ package main
 import (
     "github.com/tm1rbrt/s3dm"
     "core"
+    "game"
     "comm"
     "pubsub"
     "sf"
+    "util"
 )
 
 func main() {
@@ -19,21 +21,24 @@ func main() {
     comm.AvatarFunc = sf.MakeAvatar
     go comm.NewCommService(svc, "0.0.0.0:9190").Run(svc.Comm)
     go pubsub.NewPubSub(svc).Run(svc.PubSub)
+    go sf.NewWorld(svc).Run(svc.World)
+    svc.World = util.MsgBuffer(svc.World) // Buffer input to World
 
-    game := core.NewGame(svc)
-    initGameSvc(game)
+    game.InitFunc = initGameSvc
+    game := game.NewGame(svc)
+
     game.Run(svc.Game)
 }
 
 // Initialize the game with some default data. Eventually this will come from
 // data files and those will be loaded elsewhere.
-func initGameSvc(g *core.Game) {
+func initGameSvc(g *game.Game, svc core.ServiceContext) {
     g.PlayerFunc = playerWrapper // Register the player spawning func
     spider := sf.NewSpider(g.GetUid())
     g.AddEntity(spider)
     inc := 1.0 / 60 // Move by 1 unit/s at rate of 60 ticks/s
     spider.AddAction(sf.Move{s3dm.NewV3(inc, inc, 0)})
-    go spider.Run()
+    go spider.Run(svc)
 }
 
 // Wrap sf.NewPlayer since it returns *sf.Player and not core.Entity

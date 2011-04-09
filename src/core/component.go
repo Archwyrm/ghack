@@ -32,7 +32,7 @@ type Action interface {
     // Returns a unique and semi-descriptive name for each Action (defined by
     // the Action)
     Name() string
-    Act(ent Entity)
+    Act(ent Entity, svc ServiceContext)
 }
 
 // An Entity is a struct composed from various States and Actions, which each
@@ -55,7 +55,7 @@ type Entity interface {
     // Removes the Action from the Entity.
     RemoveAction(action Action)
     // Runs the Entity's main loop.
-    Run()
+    Run(svc ServiceContext)
     // Returns the Entity's communication channel. Returns nil if Run() has not
     // yet been called.
     Chan() chan Msg
@@ -118,23 +118,25 @@ func (cd *CmpData) RemoveAction(action Action) {
 func (cd *CmpData) Chan() chan Msg { return cd.input }
 
 // Main loop which handles all component tasks.
-func (cd *CmpData) Run() {
+func (cd *CmpData) Run(svc ServiceContext) {
     for {
         msg := <-cd.input
 
         // Call the appropriate function based on the msg type
         switch m := msg.(type) {
         case MsgTick:
-            cd.update()
+            cd.update(svc)
             m.Origin <- MsgTick{cd.input} // Reply that we are updated
         case MsgGetState:
             cd.sendState(m)
         case MsgGetAllStates:
             cd.sendAllStates(m)
+        case MsgSetState:
+            cd.SetState(m.State)
         case MsgAddAction:
             cd.AddAction(m.Action)
         case MsgRunAction:
-            m.Action.Act(cd)
+            m.Action.Act(cd, svc)
             if m.Add {
                 cd.AddAction(m.Action)
             }
@@ -143,9 +145,9 @@ func (cd *CmpData) Run() {
 }
 
 // Loop through each Action and let it run
-func (cd *CmpData) update() {
+func (cd *CmpData) update(svc ServiceContext) {
     for _, v := range cd.actions {
-        v.Act(cd)
+        v.Act(cd, svc)
     }
 }
 

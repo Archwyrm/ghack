@@ -18,19 +18,7 @@ func (a Move) Id() core.ActionId { return cmpId.Move }
 func (a Move) Name() string      { return "Move" }
 
 // Modifies the Position of an Entity with the passed Move vector.
-func (a Move) Act(ent core.Entity) {
+func (a Move) Act(ent core.Entity, svc core.ServiceContext) {
     // Automatically create a position if it does not exist, keep?
-    pos, ok := ent.GetState(cmpId.Position).(Position)
-    if !ok {
-        pos = Position{&s3dm.V3{0, 0, 0}}
-        ent.SetState(pos)
-    }
-    pos.Position = pos.Position.Add(a.Direction)
-
-    // Stick the value back in
-    // This possibly orphans the existing structure which may be hard on the GC
-    // if we are doing this for many entities every frame, pointers may be helpful..
-    // Still, the actual state setting should be a message, not direct access so we
-    // can run Actions in goroutines
-    ent.SetState(pos)
+    svc.World <- MoveMsg{core.NewEntityDesc(ent), a.Direction}
 }

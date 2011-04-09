@@ -27,6 +27,11 @@ type MsgGetState struct {
     StateReply chan State
 }
 
+// Message requesting that a certain state should be set
+type MsgSetState struct {
+    State State
+}
+
 // Message requesting all states that an entity has
 // StateReply will be ranged over by the originator of request and should be
 // closed once all states have been sent.

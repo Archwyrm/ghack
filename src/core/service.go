@@ -9,9 +9,9 @@ type Service interface {
 }
 
 type ServiceContext struct {
-    Game, Comm, PubSub chan Msg
+    Game, Comm, PubSub, World chan Msg
 }
 
 func NewServiceContext() ServiceContext {
-    return ServiceContext{make(chan Msg), make(chan Msg), make(chan Msg)}
+    return ServiceContext{make(chan Msg), make(chan Msg), make(chan Msg), make(chan Msg)}
 }
