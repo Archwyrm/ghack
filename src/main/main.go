@@ -30,11 +30,10 @@ func main() {
 func initGameSvc(g *core.Game) {
     g.PlayerFunc = playerWrapper // Register the player spawning func
     spider := sf.NewSpider(g.GetUid())
-    spiderChan := make(chan core.Msg)
-    g.AddEntity(spider, spiderChan)
+    g.AddEntity(spider)
     inc := 1.0 / 60 // Move by 1 unit/s at rate of 60 ticks/s
     spider.AddAction(sf.Move{s3dm.NewV3(inc, inc, 0)})
-    go spider.Run(spiderChan)
+    go spider.Run()
 }
 
 // Wrap sf.NewPlayer since it returns *sf.Player and not core.Entity

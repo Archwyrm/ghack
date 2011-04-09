@@ -70,16 +70,16 @@ func (g *Game) Run(input chan Msg) {
     }
 }
 
-func (g *Game) AddEntity(ent Entity, ch chan Msg) {
-    g.ents[ch] = ent
+func (g *Game) AddEntity(ent Entity) {
+    g.ents[ent.Chan()] = ent
 }
 
 func (g *Game) makeEntityList() MsgListEntities {
     list := make([]*EntityDesc, len(g.ents))
 
     i := 0
-    for ch, ent := range g.ents { // Fill the len(g.ents) slots in list
-        list[i] = NewEntityDesc(ent, ch)
+    for _, ent := range g.ents { // Fill the len(g.ents) slots in list
+        list[i] = NewEntityDesc(ent)
         i++
     }
     return MsgListEntities{nil, list}
@@ -127,10 +127,10 @@ func (g *Game) spawnPlayer(msg MsgSpawnPlayer) {
         return // Skip spawning a player
     }
     p := g.PlayerFunc(g.GetUid())
-    ch := make(chan Msg)
-    g.ents[ch] = p
-    go p.Run(ch)
+    g.ents[p.Chan()] = p
+    go p.Run()
     go func(uid UniqueId) {
-        msg.Reply <- &EntityDesc{ch, p.Uid(), p.Id(), p.Name()}
+        desc := NewEntityDesc(p)
+        msg.Reply <- desc
     }(p.Uid())
 }

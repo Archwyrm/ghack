@@ -54,8 +54,11 @@ type Entity interface {
     AddAction(action Action)
     // Removes the Action from the Entity.
     RemoveAction(action Action)
-    // Runs the Entity's main loop where its communication channel is passed
-    Run(input chan Msg)
+    // Runs the Entity's main loop.
+    Run()
+    // Returns the Entity's communication channel. Returns nil if Run() has not
+    // yet been called.
+    Chan() chan Msg
 }
 
 // Simplified declaration
@@ -77,7 +80,8 @@ type CmpData struct {
 func NewCmpData(uid UniqueId) *CmpData {
     states := make(StateList)
     actions := make(ActionList)
-    return &CmpData{uid, states, actions, nil}
+    ch := make(chan Msg)
+    return &CmpData{uid, states, actions, ch}
 }
 
 // Added to satisfy the Entity interface, clobbered by embedding.
@@ -110,18 +114,19 @@ func (cd *CmpData) RemoveAction(action Action) {
     cd.actions[action.Id()] = nil, false
 }
 
-// Main loop which handles all component tasks.
-func (cd *CmpData) Run(input chan Msg) {
-    cd.input = input
+// Returns the input channel.
+func (cd *CmpData) Chan() chan Msg { return cd.input }
 
+// Main loop which handles all component tasks.
+func (cd *CmpData) Run() {
     for {
-        msg := <-input
+        msg := <-cd.input
 
         // Call the appropriate function based on the msg type
         switch m := msg.(type) {
         case MsgTick:
             cd.update()
-            m.Origin <- MsgTick{input} // Reply that we are updated
+            m.Origin <- MsgTick{cd.input} // Reply that we are updated
         case MsgGetState:
             cd.sendState(m)
         case MsgGetAllStates:
@@ -168,6 +173,6 @@ type EntityDesc struct {
 }
 
 // Returns a new entity descriptor based off a given entity and channel.
-func NewEntityDesc(ent Entity, ch chan Msg) *EntityDesc {
-    return &EntityDesc{ch, ent.Uid(), ent.Id(), ent.Name()}
+func NewEntityDesc(ent Entity) *EntityDesc {
+    return &EntityDesc{ent.Chan(), ent.Uid(), ent.Id(), ent.Name()}
 }
