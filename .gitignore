@@ -1,5 +1,5 @@
 ghack
-*.8
+*.[568]
 src/protocol/
 src/tmp*/
 *.swp
