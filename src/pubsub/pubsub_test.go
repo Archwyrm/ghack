@@ -9,6 +9,7 @@ import (
     "time"
     "pubsub"
     "core"
+    "util"
 )
 
 var testData = []string{
@@ -108,8 +109,10 @@ func makeAndSubscribe(ps chan core.Msg, topic string, count int) (chans []pubsub
 
 // Starts the PubSub in a goroutine and returns a channel to it
 func startPubSub() (ps chan core.Msg) {
-    psObj := pubsub.NewPubSub()
+    svc := core.NewServiceContext()
+    psObj := pubsub.NewPubSub(svc)
     ps = make(chan core.Msg)
+    go util.Drain(svc.Game) // For service ready msg
     go psObj.Run(ps)
     return
 }

@@ -36,16 +36,19 @@ type UnsubscribeMsg struct {
 
 // Publish/Subscribe struct
 type PubSub struct {
+    svc           core.ServiceContext
     subscriptions map[string][]ChanType
 }
 
 // Creates a new PubSub and returns a pointer to it
-func NewPubSub() *PubSub {
-    return &PubSub{make(map[string][]ChanType)}
+func NewPubSub(svc core.ServiceContext) *PubSub {
+    return &PubSub{svc, make(map[string][]ChanType)}
 }
 
 // Starts a loop to receive and handle messages from the passed channel
 func (ps *PubSub) Run(input chan core.Msg) {
+    ps.svc.Game <- core.MsgTick{input} // Service is ready
+
     for {
         msg := <-input
 

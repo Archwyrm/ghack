@@ -55,6 +55,8 @@ func (cs *CommService) Run(input chan core.Msg) {
     shutdown := make(chan bool)
     go listen(cs.svc, input, "tcp", cs.address, shutdown)
 
+    cs.svc.Game <- core.MsgTick{input} // Service is ready
+
     for {
         msg := <-input
         switch m := msg.(type) {

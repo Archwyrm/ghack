@@ -11,6 +11,7 @@ import (
     "protocol"
     "pubsub"
     "core"
+    "util"
 )
 
 // Starts the server with a default ServiceContext for tests that don't need it
@@ -23,12 +24,13 @@ func startServerWithCtx(t *testing.T,
 ctx core.ServiceContext) (svc *CommService, cs chan core.Msg) {
     // Start new service on port 9190
     svc = NewCommService(ctx, ":9190")
+    go util.Drain(ctx.Game) // For service ready msg
     cs = ctx.Comm
     go svc.Run(cs)
 
     // Start game and pubsub so observers don't lock up
     go core.NewGame(ctx).Run(ctx.Game)
-    go pubsub.NewPubSub().Run(ctx.PubSub)
+    go pubsub.NewPubSub(ctx).Run(ctx.PubSub)
 
     // Give time for the service to start listening
     time.Sleep(1e8) // 100 ms

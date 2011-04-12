@@ -9,7 +9,14 @@ import (
     "core"
 )
 
-// Drains and discarded messages from the passed channel until a MsgQuit is received
+// Drains and discards messages from the passed channel indefinitely
+func Drain(ch chan core.Msg) {
+    for {
+        <-ch
+    }
+}
+
+// Drains and discards messages from the passed channel until a MsgQuit is received
 func DrainUntilQuit(ch chan core.Msg) {
     for {
         if _, ok := (<-ch).(core.MsgQuit); ok {

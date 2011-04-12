@@ -5,6 +5,7 @@
 package core
 
 import (
+    "reflect"
     "time"
 )
 
@@ -28,6 +29,8 @@ func NewGame(svc ServiceContext) *Game {
 }
 
 func (g *Game) Run(input chan Msg) {
+    g.waitOnServiceStart(input)
+
     // List of up to date entities
     updated := make(map[chan Msg]bool, len(g.ents))
     tick_msg := MsgTick{input}
@@ -87,6 +90,33 @@ func (g *Game) GetUid() UniqueId {
     uid := g.nextUid
     g.nextUid++
     return uid
+}
+
+// Returns once all services have signalled that they have started.
+// Automatically accounts for a variable number of services as contained in the
+// ServiceContext struct.
+//
+// TODO: This implementation is prone to error if the same service sends
+// MsgTick more than once, fix?
+func (g *Game) waitOnServiceStart(input chan Msg) {
+    // We can discard the ok value, because svc is always a struct
+    val, _ := (reflect.NewValue(g.svc)).(*reflect.StructValue)
+    svc_num := val.NumField() - 1 // Don't count Game
+    num_left := svc_num
+
+    for {
+        msg := <-input
+        switch m := msg.(type) {
+        case MsgTick:
+            num_left--
+            if num_left == 0 {
+                goto done
+            }
+        default:
+            panic("Received message other than MsgTick!")
+        }
+    }
+done:
 }
 
 // Starting to get somewhat game specific?

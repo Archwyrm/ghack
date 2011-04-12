@@ -18,7 +18,7 @@ func main() {
 
     comm.AvatarFunc = sf.MakeAvatar
     go comm.NewCommService(svc, "0.0.0.0:9190").Run(svc.Comm)
-    go pubsub.NewPubSub().Run(svc.PubSub)
+    go pubsub.NewPubSub(svc).Run(svc.PubSub)
 
     game := core.NewGame(svc)
     initGameSvc(game)
