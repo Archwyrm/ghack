@@ -5,6 +5,7 @@
 package game
 
 import (
+    "log"
     "reflect"
     "time"
     "core"
@@ -72,7 +73,11 @@ func (g *Game) Run(input chan core.Msg) {
         g.svc.Comm <- tick_msg
 
         sleep_ns := (tick_start + skip_ns) - time.Nanoseconds()
-        time.Sleep(sleep_ns)
+        if sleep_ns > 0 {
+            time.Sleep(sleep_ns)
+        } else {
+            log.Println("game: behind by", sleep_ns / 1e6 * -1, "ms")
+        }
     }
 }
 
