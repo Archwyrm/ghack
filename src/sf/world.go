@@ -7,6 +7,7 @@ package sf
 import (
     "fmt"
     "log"
+    "math"
     "github.com/tm1rbrt/s3dm"
     "core"
     "pubsub"
@@ -85,6 +86,12 @@ func (w *World) moveEnt(ent *core.EntityDesc, vel *s3dm.V3) {
 
     // See if destination cell is occupied
     if _, ok := w.ents[hash]; ok {
+        // TODO: HACK remove following if block when spider AI uses time based move
+        // Update position if movement is less than 1, this lets spider move slowly
+        if math.Fabs(vel.X) < 1 && math.Fabs(vel.Y) < 1 {
+            w.pos[ent.Uid] = new_pos
+            ent.Chan <- core.MsgSetState{Position{new_pos}}
+        }
         return // Can't move there, bail
     }
     // If not, move the entity to the new pos
