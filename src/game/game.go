@@ -76,7 +76,7 @@ func (g *Game) Run(input chan core.Msg) {
         if sleep_ns > 0 {
             time.Sleep(sleep_ns)
         } else {
-            log.Println("game: behind by", sleep_ns / 1e6 * -1, "ms")
+            log.Println("game: behind by", sleep_ns/1e6*-1, "ms")
         }
     }
 }

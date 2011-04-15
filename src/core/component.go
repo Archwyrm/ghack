@@ -90,8 +90,8 @@ func NewCmpData(uid UniqueId, id EntityId, name string) *CmpData {
 // The next functions form the core functionality of a component.
 
 func (cd *CmpData) Uid() UniqueId { return cd.uid }
-func (cd *CmpData) Id() EntityId { return cd.id }
-func (cd *CmpData) Name() string { return cd.name }
+func (cd *CmpData) Id() EntityId  { return cd.id }
+func (cd *CmpData) Name() string  { return cd.name }
 
 // Returns the requested State. It is up to the caller to verify that the wanted
 // state was actually returned.
