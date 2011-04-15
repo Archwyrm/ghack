@@ -15,11 +15,8 @@ type Player struct {
     *core.CmpData
 }
 
-func (p Player) Id() core.EntityId { return cmpId.Player }
-func (p Player) Name() string      { return "Player" }
-
 func NewPlayer(uid core.UniqueId) *Player {
-    p := &Player{core.NewCmpData(uid)}
+    p := &Player{core.NewCmpData(uid, cmpId.Player, "Player")}
     p.SetState(Position{&s3dm.V3{1, 1, 0}})
     p.SetState(Asset{"@"})
     p.SetState(Health{10})
@@ -28,16 +25,12 @@ func NewPlayer(uid core.UniqueId) *Player {
     return p
 }
 
-// A plain component definition needs only four (reasonably) compact lines
 type Spider struct {
     *core.CmpData
 }
 
-func (p Spider) Id() core.EntityId { return cmpId.Spider }
-func (p Spider) Name() string      { return "Spider" }
-
 func NewSpider(uid core.UniqueId) *Spider {
-    s := &Spider{core.NewCmpData(uid)}
+    s := &Spider{core.NewCmpData(uid, cmpId.Spider, "Spider")}
     s.SetState(Position{&s3dm.V3{1, 1, 0}})
     s.SetState(Asset{"s"})
     s.SetState(Health{10})

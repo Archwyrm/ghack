@@ -69,29 +69,29 @@ type ActionList map[ActionId]Action
 // Contains all the data that each component needs.
 // TODO: Rename to 'Component'?
 type CmpData struct {
-    uid UniqueId
+    uid  UniqueId
+    id   EntityId
+    name string
     // Use maps for easy/add remove for now
     states  StateList
     actions ActionList
     input   chan Msg
 }
 
-// Creates a CmpData and initializes its containers.
-func NewCmpData(uid UniqueId) *CmpData {
+// Creates a CmpData and initializes its containers. The passed values are data
+// relating to a specific entity.
+func NewCmpData(uid UniqueId, id EntityId, name string) *CmpData {
     states := make(StateList)
     actions := make(ActionList)
     ch := make(chan Msg)
-    return &CmpData{uid, states, actions, ch}
+    return &CmpData{uid, id, name, states, actions, ch}
 }
-
-// Added to satisfy the Entity interface, clobbered by embedding.
-func (cd CmpData) Id() EntityId { return 0 }
-// Added to satisfy the Entity interface, clobbered by embedding.
-func (cd CmpData) Name() string { return "CmpData" }
 
 // The next functions form the core functionality of a component.
 
 func (cd *CmpData) Uid() UniqueId { return cd.uid }
+func (cd *CmpData) Id() EntityId { return cd.id }
+func (cd *CmpData) Name() string { return cd.name }
 
 // Returns the requested State. It is up to the caller to verify that the wanted
 // state was actually returned.
