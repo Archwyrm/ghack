@@ -19,36 +19,26 @@ type MoveMsg struct {
     Vel *s3dm.V3         // The entity's velocity vector
 }
 
-// The world is divided into a grid, each of part of the grid is a cell
-type cell struct {
-    x, y int
+// Translates a 3D vector into a cell position. X and Y values are truncated.
+func hashV3(vec *s3dm.V3) string {
+    return fmt.Sprintf("%d+%d", int(vec.X), int(vec.Y))
 }
 
-// Returns true if both cells have the same position, false if otherwise
-func (c cell) Equals(rhs cell) bool {
-    return c.x == rhs.x && c.y == rhs.y
-}
-
-func (c cell) Hash() string {
-    return fmt.Sprintf("%d+%d", c.x, c.y)
-}
-
-func newCell(vec *s3dm.V3) *cell {
-    return &cell{int(vec.X), int(vec.Y)}
-}
-
+// Service that controls spatial relations between entities. The world is divided
+// into a grid, each of part of the grid is a cell. Currently, only one entity may
+// occupy a cell at any given time.
 type World struct {
-    svc   core.ServiceContext
-    // Entities may be looked up by position with this map
-    ents  map[string]chan core.Msg
-    // Cells (or entity position) may be looked up by entity with this map
-    cells map[core.UniqueId]*cell
+    svc core.ServiceContext
+    // Entities may be looked up by position with this
+    ents map[string]chan core.Msg
+    // Entity position (or cells) as 3D vectors may be looked up with this
+    pos map[core.UniqueId]*s3dm.V3
 }
 
 func NewWorld(svc core.ServiceContext) *World {
     ents := make(map[string]chan core.Msg)
-    cells := make(map[core.UniqueId]*cell)
-    return &World{svc, ents, cells}
+    pos := make(map[core.UniqueId]*s3dm.V3)
+    return &World{svc, ents, pos}
 }
 
 func (w *World) Run(input chan core.Msg) {
@@ -65,37 +55,40 @@ func (w *World) Run(input chan core.Msg) {
             reply := make(chan core.State)
             m.Entity.Chan <- core.MsgGetState{cmpId.Position, reply}
             if pos, ok := (<-reply).(Position); ok {
-                cell := newCell(pos.Position)
-                w.ents[cell.Hash()] = m.Entity.Chan
-                w.cells[m.Entity.Uid] = cell
+                w.setPos(m.Entity, pos.Position, nil)
             }
         }
     }
 }
 
+// Sets the position of an entity within the world. The entity whose position is
+// being set is represented by ent. New position is the passed vector new_pos.
+// The old position of old_pos is removed if it exists and is not used when nil
+// is passed.
+func (w *World) setPos(ent *core.EntityDesc, new_pos, old_pos *s3dm.V3) {
+    if old_pos != nil {
+        w.ents[hashV3(old_pos)] = nil, false // Remove old pos
+    }
+    w.ents[hashV3(new_pos)] = ent.Chan
+    w.pos[ent.Uid] = new_pos
+}
+
 func (w *World) moveEnt(ent *core.EntityDesc, vel *s3dm.V3) {
     // Compute new position vector
-    old_cell, ok := w.cells[ent.Uid]
-    cell := old_cell
+    old_pos, ok := w.pos[ent.Uid]
     if !ok { // Entity hasn't been added for some reason, bail
         log.Println("No position for", ent.Uid)
         return
     }
-    vel_cell := newCell(vel) // Convert to cell to truncate vector values
-    cell.x += vel_cell.x
-    cell.y += vel_cell.y
+    new_pos := old_pos.Add(vel)
+    hash := hashV3(new_pos)
 
-    hash := cell.Hash() // TODO: Dump cell and just hash vec3?
-
-    // See if this cell is occupied
+    // See if destination cell is occupied
     if _, ok := w.ents[hash]; ok {
         return // Can't move there, bail
     }
-    // If not, move the entity to the new cell
-    w.ents[old_cell.Hash()] = nil, false // Remove old cell
-    w.ents[hash] = ent.Chan
-    w.cells[ent.Uid] = cell
+    // If not, move the entity to the new pos
+    w.setPos(ent, new_pos, old_pos)
     // Update entity position state
-    new_v3 := s3dm.NewV3(float64(cell.x), float64(cell.y), 0)
-    ent.Chan <- core.MsgSetState{Position{new_v3}}
+    ent.Chan <- core.MsgSetState{Position{new_pos}}
 }
