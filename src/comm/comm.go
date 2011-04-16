@@ -64,7 +64,7 @@ func (cs *CommService) Run(input chan core.Msg) {
             cs.clients = append(cs.clients, m.cl)
             log.Println(m.cl.name, "connected")
         case removeClientMsg:
-            cs.removeClient(m)
+            cs.removeClient(m.cl, m.reason)
         case core.MsgQuit:
             shutdown <- true      // stop listening first so we don't
             cs.removeAllClients() // add any more clients
@@ -80,27 +80,29 @@ func (cs *CommService) Run(input chan core.Msg) {
 func (cs *CommService) removeAllClients() {
     log.Println("Shutting down server")
     for _, cl := range cs.clients {
-        cl.conn.Close()
+        cs.removeClient(cl, "")
     }
-
-    cs.clients = make([]*client, 0)
 }
 
-func (cs *CommService) removeClient(msg removeClientMsg) {
+func (cs *CommService) removeClient(cl *client, reason string) {
+    found := false
     for i, cur := range cs.clients {
-        if msg.cl == cur {
+        if cl == cur {
             cs.clients = append(cs.clients[:i], cs.clients[i+1:]...)
+            found = true
             break
         }
     }
-    // TODO: publish disconnection, deal with player entity (when applicable)
-    if msg.reason != "" { // Pretty print
-        msg.reason = ": " + msg.reason
+    if !found {
+        return // Client not found, bail
     }
-    log.Println(msg.cl.name, "disconnected"+msg.reason)
 
-    // Close this client's observer
-    msg.cl.observer <- core.MsgQuit{}
+    // TODO: publish disconnection, deal with player entity (when applicable)
+    if reason != "" { // Pretty print
+        reason = ": " + reason
+    }
+    log.Println(cl.name, "disconnected"+reason)
+    cl.Quit()
 }
 
 func listen(svc core.ServiceContext, cs chan<- core.Msg, protocol string,
@@ -377,6 +379,16 @@ func (cl *client) SendLoop(cs chan<- core.Msg) {
             return
         }
     }
+}
+
+// Disconnects client and closes all client resources.
+func (cl *client) Quit() {
+    cl.conn.Close()
+
+    // Close this client's observer and avatar
+    quit := core.MsgQuit{}
+    cl.observer <- quit
+    cl.avatar <- quit
 }
 
 // Return default values to satisfy tests, if returned chan is used, will cause
