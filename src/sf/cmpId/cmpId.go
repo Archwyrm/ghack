@@ -6,10 +6,11 @@
 // in bookkeeping.
 package cmpId
 
+import core "core/cmpId"
+
 // States
 const (
-    State = iota
-    EntityList
+    EntityList = iota + core.STATE_END
     Position
     Asset
     Health
@@ -19,14 +20,12 @@ const (
 
 // Actions
 const (
-    Action = iota
-    AddEntity
+    AddEntity = iota + core.ACTION_END
     Move
 )
 
 // Entities
 const (
-    Entity = iota
-    Player
+    Player = iota + core.ENTITY_END
     Spider
 )
