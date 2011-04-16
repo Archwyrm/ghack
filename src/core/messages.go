@@ -70,12 +70,6 @@ type MsgEntityRemoved struct {
     Entity *EntityDesc
 }
 
-// Requests that a player be created for a client. Channel to player entity is
-// sent back on Reply.
-type MsgSpawnPlayer struct {
-    Reply chan *EntityDesc
-}
-
 // Assigns control of this entity to a client
 type MsgAssignControl struct {
     Uid     UniqueId // Entity to be given to a client

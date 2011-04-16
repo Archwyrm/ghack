@@ -18,6 +18,13 @@ var skip_ns int64 = 1e9 / tick_rate // Nanosecond interval per tick
 // Function that initializes the game state.
 var InitFunc func(g *Game, svc core.ServiceContext)
 
+// Requests that an entity be created. If Reply is not nil, entity descriptor
+// will be sent back.
+type MsgSpawnEntity struct {
+    Spawn func(uid core.UniqueId) core.Entity
+    Reply chan *core.EntityDesc
+}
+
 // Manages game data and runs the main loop.
 type Game struct {
     svc     core.ServiceContext
@@ -25,13 +32,12 @@ type Game struct {
     nextUid core.UniqueId
     // This function is used to spawn new players when a client joins. As this
     // service has no concept of any specific entities it must be set by the specific game.
-    PlayerFunc func(core.UniqueId) core.Entity
 }
 
 func NewGame(svc core.ServiceContext) *Game {
     var uid core.UniqueId = 0 // Game uid is always zero
     ents := make(map[chan core.Msg]core.Entity)
-    return &Game{svc, ents, uid + 1, nil}
+    return &Game{svc, ents, uid + 1}
 }
 
 func (g *Game) Run(input chan core.Msg) {
@@ -68,8 +74,8 @@ func (g *Game) Run(input chan core.Msg) {
                 remove_list = append(remove_list, m.Entity.Chan)
             case core.MsgListEntities:
                 m.Reply <- g.makeEntityList()
-            case core.MsgSpawnPlayer:
-                g.spawnPlayer(m)
+            case MsgSpawnEntity:
+                g.spawnEntity(m)
             }
         }
     update_end:
@@ -149,18 +155,15 @@ func (g *Game) waitOnServiceStart(input chan core.Msg) {
 done:
 }
 
-// Starting to get somewhat game specific?
-
 // Creates a new player entity for a requesting client
-func (g *Game) spawnPlayer(msg core.MsgSpawnPlayer) {
-    if g.PlayerFunc == nil {
-        return // Skip spawning a player
-    }
-    p := g.PlayerFunc(g.GetUid())
+func (g *Game) spawnEntity(msg MsgSpawnEntity) {
+    p := msg.Spawn(g.GetUid())
     g.AddEntity(p)
     go p.Run(g.svc)
-    go func(uid core.UniqueId) {
-        desc := core.NewEntityDesc(p)
-        msg.Reply <- desc
-    }(p.Uid())
+    if msg.Reply != nil {
+        go func() {
+            desc := core.NewEntityDesc(p)
+            msg.Reply <- desc
+        }()
+    }
 }

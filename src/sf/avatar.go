@@ -8,6 +8,7 @@ import (
     "log"
     "github.com/tm1rbrt/s3dm"
     "core"
+    "game"
     "protocol"
 )
 
@@ -29,7 +30,7 @@ func MakeAvatar(svc core.ServiceContext, input chan *protocol.Message) (chan cor
 core.UniqueId) {
     ctrl := make(chan core.Msg)
     reply := make(chan *core.EntityDesc)
-    svc.Game <- core.MsgSpawnPlayer{reply}
+    svc.Game <- game.MsgSpawnEntity{InitPlayer, reply}
     player := <-reply
     a := avatar{svc, *player}
     go a.control(ctrl, input)

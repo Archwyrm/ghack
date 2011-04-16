@@ -15,7 +15,7 @@ type Player struct {
     *core.CmpData
 }
 
-func NewPlayer(uid core.UniqueId) *Player {
+func InitPlayer(uid core.UniqueId) core.Entity {
     p := &Player{core.NewCmpData(uid, cmpId.Player, "Player")}
     p.SetState(Position{&s3dm.V3{1, 1, 0}})
     p.SetState(Asset{"@"})
@@ -29,7 +29,7 @@ type Spider struct {
     *core.CmpData
 }
 
-func NewSpider(uid core.UniqueId) *Spider {
+func InitSpider(uid core.UniqueId) core.Entity {
     s := &Spider{core.NewCmpData(uid, cmpId.Spider, "Spider")}
     s.SetState(Position{&s3dm.V3{1, 1, 0}})
     s.SetState(Asset{"s"})

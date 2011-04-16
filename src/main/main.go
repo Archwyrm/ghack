@@ -33,15 +33,9 @@ func main() {
 // Initialize the game with some default data. Eventually this will come from
 // data files and those will be loaded elsewhere.
 func initGameSvc(g *game.Game, svc core.ServiceContext) {
-    g.PlayerFunc = playerWrapper // Register the player spawning func
-    spider := sf.NewSpider(g.GetUid())
+    spider := sf.InitSpider(g.GetUid())
     g.AddEntity(spider)
     inc := 1.0 / 60 // Move by 1 unit/s at rate of 60 ticks/s
     spider.AddAction(sf.Move{s3dm.NewV3(inc, inc, 0)})
     go spider.Run(svc)
-}
-
-// Wrap sf.NewPlayer since it returns *sf.Player and not core.Entity
-func playerWrapper(uid core.UniqueId) core.Entity {
-    return sf.NewPlayer(uid)
 }
