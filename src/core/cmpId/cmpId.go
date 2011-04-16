@@ -8,7 +8,9 @@ package cmpId
 
 // States
 const (
-    STATE_END = iota // END must always be last
+    Remove = iota
+
+    STATE_END // END must always be last
 )
 
 // Actions

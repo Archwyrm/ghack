@@ -18,7 +18,8 @@ import (
 // what it is controlling and how to control it. Thus a game must provide an
 // avatar implementation in order to allow clients to interact with the game.
 type avatar struct {
-    player chan core.Msg
+    svc    core.ServiceContext
+    player core.EntityDesc
 }
 
 // Starts an avatar on behalf of a connected client. Takes a current ServiceContext
@@ -30,7 +31,7 @@ core.UniqueId) {
     reply := make(chan *core.EntityDesc)
     svc.Game <- core.MsgSpawnPlayer{reply}
     player := <-reply
-    a := avatar{player.Chan}
+    a := avatar{svc, *player}
     go a.control(ctrl, input)
     return ctrl, player.Uid
 }
@@ -39,15 +40,19 @@ func (a *avatar) control(ctrl <-chan core.Msg, input <-chan *protocol.Message) {
     for {
         select {
         case msg := <-ctrl:
-            _ = msg
-            // TODO: Handle MsgQuit
+            switch m := msg.(type) {
             // TODO: Handle MsgTick?
+            case core.MsgQuit:
+                a.player.Chan <- core.MsgSetState{core.Remove{true}}
+                a.svc.Game <- core.MsgEntityRemoved{&a.player}
+                return
+            }
         case msg := <-input:
             switch *msg.Type {
             case protocol.Message_Type(protocol.Message_MOVE):
                 dir := msg.Move.Direction
                 vec := s3dm.NewV3(*dir.X, *dir.Y, *dir.Z)
-                a.player <- core.MsgRunAction{Move{vec}, false}
+                a.player.Chan <- core.MsgRunAction{Move{vec}, false}
             default:
                 log.Println("Client sent unhandled message, ignoring:",
                     protocol.Message_Type_name[int32(*msg.Type)])

@@ -40,6 +40,7 @@ func (g *Game) Run(input chan core.Msg) {
 
     // List of up to date entities
     updated := make(map[chan core.Msg]bool, len(g.ents))
+    remove_list := []chan core.Msg{}
     tick_msg := core.MsgTick{input}
 
     for {
@@ -63,6 +64,8 @@ func (g *Game) Run(input chan core.Msg) {
                     updated = make(map[chan core.Msg]bool, len(g.ents))
                     goto update_end
                 }
+            case core.MsgEntityRemoved: // TODO: Counts as imperative here, fix?
+                remove_list = append(remove_list, m.Entity.Chan)
             case core.MsgListEntities:
                 m.Reply <- g.makeEntityList()
             case core.MsgSpawnPlayer:
@@ -71,6 +74,14 @@ func (g *Game) Run(input chan core.Msg) {
         }
     update_end:
         g.svc.Comm <- tick_msg
+
+        // Remove all entities that reported themselves to be removed
+        for _, ent := range remove_list {
+            g.RemoveEntity(g.ents[ent])
+        }
+        if len(remove_list) > 0 { // Clear out list if needed
+            remove_list = []chan core.Msg{}
+        }
 
         sleep_ns := (tick_start + skip_ns) - time.Nanoseconds()
         if sleep_ns > 0 {
@@ -84,6 +95,12 @@ func (g *Game) Run(input chan core.Msg) {
 func (g *Game) AddEntity(ent core.Entity) {
     g.ents[ent.Chan()] = ent
     msg := core.MsgEntityAdded{core.NewEntityDesc(ent)}
+    g.svc.PubSub <- pubsub.PublishMsg{"entity", msg}
+}
+
+func (g *Game) RemoveEntity(ent core.Entity) {
+    g.ents[ent.Chan()] = nil, false
+    msg := core.MsgEntityRemoved{core.NewEntityDesc(ent)}
     g.svc.PubSub <- pubsub.PublishMsg{"entity", msg}
 }
 

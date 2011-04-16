@@ -6,6 +6,8 @@
 
 package core
 
+import "core/cmpId"
+
 // Identifies a single state type
 type StateId int
 // Identifies a single action type
@@ -125,6 +127,12 @@ func (cd *CmpData) Run(svc ServiceContext) {
         // Call the appropriate function based on the msg type
         switch m := msg.(type) {
         case MsgTick:
+            // Check at the start of the tick because Game actually removes at
+            // the end of the previous tick
+            if _, ok := cd.states[cmpId.Remove]; ok {
+                m.Origin <- MsgTick{cd.input}
+                return // Entity was removed, bail
+            }
             cd.update(svc)
             m.Origin <- MsgTick{cd.input} // Reply that we are updated
         case MsgGetState:
