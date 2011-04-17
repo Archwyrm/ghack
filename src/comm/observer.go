@@ -11,6 +11,7 @@ package comm
 
 import (
     "fmt"
+    "reflect"
     "core"
     "pubsub"
     "util"
@@ -144,6 +145,8 @@ type view struct {
 }
 
 func (v *view) replicate(uid core.UniqueId, ctrl chan core.Msg) {
+    // TODO: Eventually this list will fill with states that are no longer in
+    // the entity, we need a mechanism to clear it out occasionally
     v.states = make(core.StateList)
     request := core.MsgGetAllStates{}
     msg := MsgUpdateState{}
@@ -160,11 +163,12 @@ func (v *view) replicate(uid core.UniqueId, ctrl chan core.Msg) {
                 continue
             }
             // Compare to current value (first time will be none)
-            if v, ok := v.states[s.Id()]; ok {
-                // TODO: Use reflection to compare values of states
-                // For now, always update
-                _ = v
+            if val, ok := v.states[s.Id()]; ok {
+                if reflect.DeepEqual(val, s) {
+                    continue
+                }
             }
+            v.states[s.Id()] = s
             // Send updates for any changed states
             msg.State = s
             v.client <- msg
