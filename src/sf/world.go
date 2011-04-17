@@ -8,8 +8,10 @@ import (
     "fmt"
     "log"
     "math"
+    "rand"
     "github.com/tm1rbrt/s3dm"
     "core"
+    "game"
     "pubsub"
     "sf/cmpId"
 )
@@ -98,4 +100,50 @@ func (w *World) moveEnt(ent *core.EntityDesc, vel *s3dm.V3) {
     w.setPos(ent, new_pos, old_pos)
     // Update entity position state
     ent.Chan <- core.MsgSetState{Position{new_pos}}
+
+    // Spawn spiders as players move around
+    if ent.Id == cmpId.Player {
+        w.spawnSpiders(new_pos)
+    }
+}
+
+func (w *World) spawnSpiders(pos *s3dm.V3) {
+    // Represents the gradually increasing difficulty as the player gets
+    // farther from the center of Spider Forest. Every time the player
+    // passes this threshold, another spider will definitely spawn upon
+    // player movement. So if the player is 173 units from the center,
+    // 173/50=3 spiders will spawn with a 23/50 chance to make it 4.
+    // The lower this number, the more difficult the game will be.
+    const LEVEL_DIST = 100.
+    // Minimum and maximum distance from the player to spawn spiders
+    const MIN_DIST = 40.
+    const MAX_DIST = 60.
+
+    // Find how many spiders will definitely spawn
+    dist := pos.Length()
+    count := 0
+    for dist >= LEVEL_DIST {
+        dist -= LEVEL_DIST
+        count++
+    }
+    // Random chance for a spider to spawn
+    if rand.Float64() <= dist/LEVEL_DIST {
+        count++
+    }
+
+    // Spawn spiders at a random point in a ring around the player
+    // between MIN_DIST and MAX_DIST.
+    reply := make(chan *core.EntityDesc)
+    for i := 0; i < count; i++ {
+        radius := rand.Float64()*(MAX_DIST-MIN_DIST) + MIN_DIST
+        angle := rand.Float64() * 2. * math.Pi
+        x := pos.X + radius*math.Cos(angle)
+        y := pos.Y + radius*math.Sin(angle)
+        // Create the spider entity and position it
+        go func(X, Y float64) {
+            w.svc.Game <- game.MsgSpawnEntity{InitSpider, reply}
+            spider := <-reply
+            spider.Chan <- core.MsgSetState{Position{s3dm.NewV3(X, Y, 0.)}}
+        }(x, y)
+    }
 }
