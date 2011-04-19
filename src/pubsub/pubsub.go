@@ -65,10 +65,16 @@ func (ps *PubSub) Run(input chan core.Msg) {
     }
 }
 
-// Sends a message to subscribers
+// Sends a message to subscribers asynchronusly if the receiving channel blocks
 func (ps *PubSub) publish(msg PublishMsg) {
     for _, sub := range ps.subscriptions[msg.Topic] {
-        sub <- msg.Data
+        select {
+        case sub <- msg.Data:
+        default:
+            go func(ch chan core.Msg, data interface{}) {
+                ch <- data
+            }(sub, msg.Data)
+        }
     }
 }
 
