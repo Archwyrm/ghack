@@ -58,9 +58,26 @@ func (w *World) Run(input chan core.Msg) {
             reply := make(chan core.State)
             m.Entity.Chan <- core.MsgGetState{cmpId.Position, reply}
             if pos, ok := (<-reply).(Position); ok {
-                w.setPos(m.Entity, pos.Position, nil)
+                w.putInEmptyPos(m.Entity, pos.Position)
             }
         }
+    }
+}
+
+// Puts the passed entity in an empty position as close to pos as possible.
+// TODO: Current implementation doesn't try very hard at closeness ;)
+func (w *World) putInEmptyPos(ent *core.EntityDesc, pos *s3dm.V3) {
+    old_pos := pos.Copy()
+    for {
+        if _, ok := w.ents[hashV3(pos)]; !ok {
+            break // Empty, proceed
+        }
+        inc := &s3dm.V3{1, 1, 0}
+        pos = pos.Add(inc)
+    }
+    w.setPos(ent, pos, nil)
+    if !pos.Equals(old_pos) {
+        ent.Chan <- core.MsgSetState{Position{pos}} // Update with new pos
     }
 }
 
