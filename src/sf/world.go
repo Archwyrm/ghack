@@ -108,14 +108,15 @@ func (w *World) moveEnt(ent *core.EntityDesc, vel *s3dm.V3) {
     hash := hashV3(new_pos)
 
     // See if destination cell is occupied
-    if _, ok := w.ents[hash]; ok {
+    if ent_ch, ok := w.ents[hash]; ok {
         // TODO: HACK remove following if block when spider AI uses time based move
         // Update position if movement is less than 1, this lets spider move slowly
         if math.Fabs(vel.X) < 1 && math.Fabs(vel.Y) < 1 {
             w.pos[ent.Uid] = new_pos
             ent.Chan <- core.MsgSetState{Position{new_pos}}
         }
-        return // Can't move there, bail
+        ent_ch <- core.MsgRunAction{Attack{}, false} // Can't move there, attack instead
+        return
     }
     // If not, move the entity to the new pos
     w.setPos(ent, new_pos, old_pos)

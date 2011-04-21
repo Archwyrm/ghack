@@ -21,6 +21,7 @@ const (
 // Actions
 const (
     Move = iota + core.ACTION_END
+    Attack
 )
 
 // Entities

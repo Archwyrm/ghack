@@ -54,3 +54,16 @@ func MsgBuffer(ch chan core.Msg) chan core.Msg {
     }()
     return in
 }
+
+// Performs asynchronus send of msg to ch. Initially tries to send directly to
+// the channel, if this is not immediately possible, a goroutine is started to
+// perform the send. This has the effect of Send not blocking.
+func Send(ch chan core.Msg, msg core.Msg) {
+    select {
+    case ch <- msg:
+    default:
+        go func(ch chan core.Msg, data interface{}) {
+            ch <- data
+        }(ch, msg)
+    }
+}

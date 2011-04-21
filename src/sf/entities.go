@@ -33,7 +33,7 @@ func InitSpider(uid core.UniqueId) core.Entity {
     s := &Spider{core.NewCmpData(uid, cmpId.Spider, "Spider")}
     s.SetState(Position{&s3dm.V3{1, 1, 0}})
     s.SetState(Asset{"s"})
-    s.SetState(Health{10})
-    s.SetState(MaxHealth{10})
+    s.SetState(Health{4})
+    s.SetState(MaxHealth{4})
     return s
 }

@@ -8,6 +8,7 @@ import (
     "github.com/tm1rbrt/s3dm"
     "core"
     "sf/cmpId"
+    "util"
 )
 
 type Move struct {
@@ -20,4 +21,25 @@ func (a Move) Name() string      { return "Move" }
 // Modifies the Position of an Entity with the passed Move vector.
 func (a Move) Act(ent core.Entity, svc core.ServiceContext) {
     svc.World <- MoveMsg{core.NewEntityDesc(ent), a.Direction}
+}
+
+// Does damage to the calling entity, the entity being attacked.
+// Removes the entity if Health is zero.
+type Attack struct{}
+
+func (a Attack) Id() core.ActionId { return cmpId.Attack }
+func (a Attack) Name() string      { return "Attack" }
+
+func (a Attack) Act(ent core.Entity, svc core.ServiceContext) {
+    var health Health
+    var ok bool
+    if health, ok = (ent.GetState(cmpId.Health)).(Health); !ok {
+        return // Ent has not Health state
+    }
+    health.Health-- // Extremely complex damage formula
+    if health.Health <= 0 {
+        ent.SetState(core.Remove{})
+        util.Send(svc.Game, core.MsgEntityRemoved{core.NewEntityDesc(ent)})
+    }
+    ent.SetState(health)
 }

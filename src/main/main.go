@@ -6,7 +6,6 @@
 package main
 
 import (
-    "github.com/tm1rbrt/s3dm"
     "core"
     "game"
     "comm"
@@ -35,7 +34,5 @@ func main() {
 func initGameSvc(g *game.Game, svc core.ServiceContext) {
     spider := sf.InitSpider(g.GetUid())
     g.AddEntity(spider)
-    inc := 1.0 / 60 // Move by 1 unit/s at rate of 60 ticks/s
-    spider.AddAction(sf.Move{s3dm.NewV3(inc, inc, 0)})
     go spider.Run(svc)
 }
