@@ -8,9 +8,10 @@ import (
     "testing"
     "net"
     "time"
+    "core"
+    "game"
     "protocol"
     "pubsub"
-    "core"
     "util"
 )
 
@@ -29,7 +30,7 @@ ctx core.ServiceContext) (svc *CommService, cs chan core.Msg) {
     go svc.Run(cs)
 
     // Start game and pubsub so observers don't lock up
-    go core.NewGame(ctx).Run(ctx.Game)
+    go game.NewGame(ctx).Run(ctx.Game)
     go pubsub.NewPubSub(ctx).Run(ctx.PubSub)
 
     // Give time for the service to start listening
