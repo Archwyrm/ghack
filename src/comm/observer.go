@@ -12,6 +12,7 @@ package comm
 import (
     "fmt"
     "reflect"
+    "runtime"
     "core"
     "pubsub"
     "util"
@@ -155,9 +156,14 @@ func (v *view) replicate(uid core.UniqueId, ctrl chan core.Msg) {
     for {
         reply := make(chan core.State)
         request.StateReply = reply
+        select {
         // TODO: White or black list?
         // Get whitelisted states from entity (must check for new states)
-        v.entity <- request
+        case v.entity <- request:
+        case msg := <-ctrl:
+            handleCtrl(msg)
+        }
+
         for s := range reply {
             if !checkWhiteList(s.Id()) {
                 continue
@@ -175,9 +181,13 @@ func (v *view) replicate(uid core.UniqueId, ctrl chan core.Msg) {
         }
         // Listen for next update signal
         msg := <-ctrl
-        if _, ok := msg.(core.MsgQuit); ok {
-            return
-        }
+        handleCtrl(msg)
+    }
+}
+
+func handleCtrl(msg core.Msg) {
+    if _, ok := msg.(core.MsgQuit); ok {
+        runtime.Goexit()
     }
 }
 
