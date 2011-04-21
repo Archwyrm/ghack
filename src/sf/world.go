@@ -60,6 +60,10 @@ func (w *World) Run(input chan core.Msg) {
             if pos, ok := (<-reply).(Position); ok {
                 w.putInEmptyPos(m.Entity, pos.Position)
             }
+        case core.MsgEntityRemoved:
+            pos := w.pos[m.Entity.Uid]
+            w.pos[m.Entity.Uid] = nil, false
+            w.ents[hashV3(pos)] = nil, false
         }
     }
 }
