@@ -41,8 +41,8 @@ func MsgBuffer(ch chan core.Msg) chan core.Msg {
             if len(buf) == 0 {
                 out = nil // Disable send
             } else {
-                out = ch // Enable send
-                msg = buf[0] // Set value to send
+                out = ch              // Enable send
+                msg = buf[0]          // Set value to send
                 buf = buf[1:len(buf)] // Discard the value
             }
             select {

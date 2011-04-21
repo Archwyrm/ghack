@@ -20,8 +20,7 @@ const (
 
 // Actions
 const (
-    AddEntity = iota + core.ACTION_END
-    Move
+    Move = iota + core.ACTION_END
 )
 
 // Entities

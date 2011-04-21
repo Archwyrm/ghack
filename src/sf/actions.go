@@ -19,6 +19,5 @@ func (a Move) Name() string      { return "Move" }
 
 // Modifies the Position of an Entity with the passed Move vector.
 func (a Move) Act(ent core.Entity, svc core.ServiceContext) {
-    // Automatically create a position if it does not exist, keep?
     svc.World <- MoveMsg{core.NewEntityDesc(ent), a.Direction}
 }
