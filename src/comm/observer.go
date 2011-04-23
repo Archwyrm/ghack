@@ -75,6 +75,7 @@ func (obs *observer) init() {
         obs.addView(ent)
     }
     obs.svc.PubSub <- pubsub.SubscribeMsg{"entity", obs.ctrl}
+    obs.svc.PubSub <- pubsub.SubscribeMsg{"combat", obs.ctrl}
 }
 
 func (obs *observer) observe() {
@@ -118,6 +119,8 @@ func (obs *observer) observe() {
             }
             obs.views[ent.Chan] = nil, false
             obs.client <- MsgRemoveEntity{ent.Uid, ent.Name}
+        default:
+            obs.eventListener(m)
         }
     }
 }
@@ -195,4 +198,9 @@ func handleCtrl(msg core.Msg) {
 // Returns true if whitelisted, false otherwise
 func checkWhiteList(id core.StateId) bool {
     return true // TODO: Actually check
+}
+
+// Send events to client
+func (obs *observer) eventListener(msg core.Msg) {
+    obs.client <- msg
 }

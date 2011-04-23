@@ -372,6 +372,7 @@ func (cl *client) SendLoop(cs chan<- core.Msg) {
             err = sendMessage(cl.conn, makeUpdateState(int32(m.Uid), m.State.Name(), value))
         case core.MsgAssignControl:
             err = sendMessage(cl.conn, makeAssignControl(int32(m.Uid), m.Revoked))
+        default: // handle event
         }
         // Remove client if something went wrong
         if err != nil {
