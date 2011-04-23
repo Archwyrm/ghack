@@ -70,6 +70,7 @@ message Message {
         UPDATESTATE = 7;
         MOVE = 8;
         ASSIGNCONTROL = 9;
+        ENTITYDEATH = 10;
     }
 
     // Type of message that this contains
@@ -87,6 +88,7 @@ message Message {
     optional Login login = 18;
     optional LoginResult login_result = 19;
     optional AssignControl assign_control = 20;
+    optional EntityDeath entity_death = 21;
 }
 
 message Connect {
@@ -188,4 +190,10 @@ message AssignControl {
     required int32 uid = 1;
     // If set, and set to true, control of the entity has been revoked
     optional bool revoked = 2;
+}
+
+// Signifies that an entity died
+message EntityDeath {
+    required int32 uid = 1;
+    optional string name = 2;
 }

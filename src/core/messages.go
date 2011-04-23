@@ -75,3 +75,8 @@ type MsgAssignControl struct {
     Uid     UniqueId // Entity to be given to a client
     Revoked bool     // True, if control is to be removed
 }
+
+// Signifies that an entity died
+type MsgEntityDeath struct {
+    Entity *EntityDesc
+}

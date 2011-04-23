@@ -104,3 +104,15 @@ func makeAssignControl(uid int32, revoked bool) (msg *protocol.Message) {
         Type:          protocol.NewMessage_Type(protocol.Message_ASSIGNCONTROL),
     }
 }
+
+func makeEntityDeath(uid int32, name string) (msg *protocol.Message) {
+    entityDeath := &protocol.EntityDeath{
+        Uid:    &uid,
+        Name:   &name,
+    }
+
+    return &protocol.Message{
+        EntityDeath: entityDeath,
+        Type:        protocol.NewMessage_Type(protocol.Message_ENTITYDEATH),
+    }
+}

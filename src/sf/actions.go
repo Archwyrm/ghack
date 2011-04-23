@@ -9,6 +9,7 @@ import (
     "core"
     "sf/cmpId"
     "util"
+    "pubsub"
 )
 
 type Move struct {
@@ -39,7 +40,9 @@ func (a Attack) Act(ent core.Entity, svc core.ServiceContext) {
     health.Health-- // Extremely complex damage formula
     if health.Health <= 0 {
         ent.SetState(core.Remove{})
-        util.Send(svc.Game, core.MsgEntityRemoved{core.NewEntityDesc(ent)})
+        ed := core.NewEntityDesc(ent)
+        util.Send(svc.Game, core.MsgEntityRemoved{ed})
+        util.Send(svc.PubSub, pubsub.PublishMsg{"combat", core.MsgEntityDeath{ed}})
     }
     ent.SetState(health)
 }
