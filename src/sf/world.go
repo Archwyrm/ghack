@@ -115,7 +115,7 @@ func (w *World) moveEnt(ent *core.EntityDesc, vel *s3dm.V3) {
             w.pos[ent.Uid] = new_pos
             ent.Chan <- core.MsgSetState{Position{new_pos}}
         }
-        ent_ch <- core.MsgRunAction{Attack{}, false} // Can't move there, attack instead
+        ent_ch <- core.MsgRunAction{Attack{ent}, false} // Can't move there, attack instead
         return
     }
     // If not, move the entity to the new pos

@@ -26,7 +26,9 @@ func (a Move) Act(ent core.Entity, svc core.ServiceContext) {
 
 // Does damage to the calling entity, the entity being attacked.
 // Removes the entity if Health is zero.
-type Attack struct{}
+type Attack struct {
+    Attacker *core.EntityDesc
+}
 
 func (a Attack) Id() core.ActionId { return cmpId.Attack }
 func (a Attack) Name() string      { return "Attack" }
@@ -38,9 +40,10 @@ func (a Attack) Act(ent core.Entity, svc core.ServiceContext) {
         return // Ent has not Health state
     }
     health.Health-- // Extremely complex damage formula
+    ed := core.NewEntityDesc(ent)
+    util.Send(svc.PubSub, pubsub.PublishMsg{"combat", core.MsgCombatHit{a.Attacker, ed, 1}})
     if health.Health <= 0 {
         ent.SetState(core.Remove{})
-        ed := core.NewEntityDesc(ent)
         util.Send(svc.Game, core.MsgEntityRemoved{ed})
         util.Send(svc.PubSub, pubsub.PublishMsg{"combat", core.MsgEntityDeath{ed}})
     }

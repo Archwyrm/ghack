@@ -116,3 +116,18 @@ func makeEntityDeath(uid int32, name string) (msg *protocol.Message) {
         Type:        protocol.NewMessage_Type(protocol.Message_ENTITYDEATH),
     }
 }
+
+func makeCombatHit(auid int32, aname string, vuid int32, vname string, damage float32) (msg *protocol.Message) {
+    combatHit := &protocol.CombatHit{
+        AttackerUid:  &auid,
+        AttackerName: &aname,
+        VictimUid:    &vuid,
+        VictimName:   &vname,
+        Damage:       &damage,
+    }
+
+    return &protocol.Message{
+        CombatHit: combatHit,
+        Type:      protocol.NewMessage_Type(protocol.Message_COMBATHIT),
+    }
+}

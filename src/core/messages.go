@@ -80,3 +80,10 @@ type MsgAssignControl struct {
 type MsgEntityDeath struct {
     Entity *EntityDesc
 }
+
+// Represents damage dealt in combat
+type MsgCombatHit struct {
+    Attacker *EntityDesc
+    Victim   *EntityDesc
+    Damage   float32
+}

@@ -375,6 +375,10 @@ func (cl *client) SendLoop(cs chan<- core.Msg) {
         case core.MsgEntityDeath:
             uid, name := m.Entity.Uid, m.Entity.Name
             err = sendMessage(cl.conn, makeEntityDeath(int32(uid), name))
+        case core.MsgCombatHit:
+            auid, aname := m.Attacker.Uid, m.Attacker.Name
+            vuid, vname := m.Victim.Uid, m.Victim.Name
+            err = sendMessage(cl.conn, makeCombatHit(int32(auid), aname, int32(vuid), vname, m.Damage))
         }
         // Remove client if something went wrong
         if err != nil {
