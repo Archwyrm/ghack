@@ -45,7 +45,7 @@ func (a Attack) Act(ent core.Entity, svc core.ServiceContext) {
     if health.Health <= 0 {
         ent.SetState(core.Remove{})
         util.Send(svc.Game, core.MsgEntityRemoved{ed})
-        util.Send(svc.PubSub, pubsub.PublishMsg{"combat", core.MsgEntityDeath{ed}})
+        util.Send(svc.PubSub, pubsub.PublishMsg{"combat", core.MsgEntityDeath{ed, a.Attacker}})
     }
     ent.SetState(health)
 }

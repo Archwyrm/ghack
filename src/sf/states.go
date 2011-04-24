@@ -38,10 +38,3 @@ type MaxHealth struct {
 
 func (x MaxHealth) Id() core.StateId { return cmpId.MaxHealth }
 func (x MaxHealth) Name() string     { return "MaxHealth" }
-
-type KillCount struct {
-    KillCount int
-}
-
-func (x KillCount) Id() core.StateId { return cmpId.KillCount }
-func (x KillCount) Name() string     { return "KillCount" }

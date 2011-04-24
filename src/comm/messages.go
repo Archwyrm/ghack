@@ -105,10 +105,12 @@ func makeAssignControl(uid int32, revoked bool) (msg *protocol.Message) {
     }
 }
 
-func makeEntityDeath(uid int32, name string) (msg *protocol.Message) {
+func makeEntityDeath(uid int32, name string, kuid int32, kname string) (msg *protocol.Message) {
     entityDeath := &protocol.EntityDeath{
-        Uid:    &uid,
-        Name:   &name,
+        Uid:        &uid,
+        Name:       &name,
+        KillerUid:  &kuid,
+        KillerName: &kname,
     }
 
     return &protocol.Message{

@@ -21,7 +21,6 @@ func InitPlayer(uid core.UniqueId) core.Entity {
     p.SetState(Asset{"@"})
     p.SetState(Health{10})
     p.SetState(MaxHealth{10})
-    p.SetState(KillCount{0})
     return p
 }
 

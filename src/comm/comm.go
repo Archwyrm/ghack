@@ -374,7 +374,8 @@ func (cl *client) SendLoop(cs chan<- core.Msg) {
             err = sendMessage(cl.conn, makeAssignControl(int32(m.Uid), m.Revoked))
         case core.MsgEntityDeath:
             uid, name := m.Entity.Uid, m.Entity.Name
-            err = sendMessage(cl.conn, makeEntityDeath(int32(uid), name))
+            kuid, kname := m.Killer.Uid, m.Killer.Name
+            err = sendMessage(cl.conn, makeEntityDeath(int32(uid), name, int32(kuid), kname))
         case core.MsgCombatHit:
             auid, aname := m.Attacker.Uid, m.Attacker.Name
             vuid, vname := m.Victim.Uid, m.Victim.Name

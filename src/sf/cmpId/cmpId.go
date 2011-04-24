@@ -15,7 +15,6 @@ const (
     Asset
     Health
     MaxHealth
-    KillCount
 )
 
 // Actions

@@ -79,6 +79,7 @@ type MsgAssignControl struct {
 // Signifies that an entity died
 type MsgEntityDeath struct {
     Entity *EntityDesc
+    Killer *EntityDesc
 }
 
 // Represents damage dealt in combat

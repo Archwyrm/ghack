@@ -198,6 +198,8 @@ message AssignControl {
 message EntityDeath {
     required int32 uid = 1;
     optional string name = 2;
+    optional int32 killer_uid = 3;
+    optional string killer_name = 4;
 }
 
 // Represents damage dealt in combat
