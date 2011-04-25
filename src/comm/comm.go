@@ -42,37 +42,47 @@ type removeClientMsg struct {
 }
 
 type CommService struct {
-    svc     ServiceContext
-    clients []*client
-    address string
+    *HandlerQueue
+    svc      ServiceContext
+    clients  []*client
+    address  string
+    listener chan bool
+    input    chan Msg
 }
 
+func (cs *CommService) Chan() chan Msg { return cs.input }
+
 func NewCommService(svc ServiceContext, address string) *CommService {
-    return &CommService{svc, make([]*client, 0, 5), address}
+    hq := NewHandlerQueue()
+    ch := make(chan bool)
+    return &CommService{hq, svc, make([]*client, 0, 5), address, ch, nil}
 }
 
 func (cs *CommService) Run(input chan Msg) {
-    shutdown := make(chan bool)
-    go listen(cs.svc, input, "tcp", cs.address, shutdown)
+    cs.input = input
+    go listen(cs.svc, input, "tcp", cs.address, cs.listener)
 
-    cs.svc.Game <- MsgTick{input} // Service is ready
+    Send(cs, cs.svc.Game, MsgTick{input}) // Service is ready
 
     for {
-        msg := <-input
-        switch m := msg.(type) {
-        case addClientMsg:
-            cs.clients = append(cs.clients, m.cl)
-            log.Println(m.cl.name, "connected")
-        case removeClientMsg:
-            cs.removeClient(m.cl, m.reason)
-        case MsgQuit:
-            shutdown <- true      // stop listening first so we don't
-            cs.removeAllClients() // add any more clients
-            return
-        case MsgTick: // Client state should be updated
-            for _, cl := range cs.clients {
-                cl.observer <- m
-            }
+        cs.handle(cs.GetMsg(input))
+    }
+}
+
+func (cs *CommService) handle(msg Msg) {
+    switch m := msg.(type) {
+    case addClientMsg:
+        cs.clients = append(cs.clients, m.cl)
+        log.Println(m.cl.name, "connected")
+    case removeClientMsg:
+        cs.removeClient(m.cl, m.reason)
+    case MsgQuit:
+        cs.listener <- true   // Stop listening first so we don't
+        cs.removeAllClients() // add any more clients
+        return
+    case MsgTick: // Client state should be updated
+        for _, cl := range cs.clients {
+            cl.observer <- m
         }
     }
 }

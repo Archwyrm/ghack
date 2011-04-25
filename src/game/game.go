@@ -22,25 +22,29 @@ var InitFunc func(g *Game, svc ServiceContext)
 // will be sent back.
 type MsgSpawnEntity struct {
     Spawn func(uid UniqueId) Entity
-    Reply chan *EntityDesc
+    Reply chan Msg
 }
 
 // Manages game data and runs the main loop.
 type Game struct {
+    *HandlerQueue
     svc     ServiceContext
     ents    map[chan Msg]Entity
     nextUid UniqueId
-    // This function is used to spawn new players when a client joins. As this
-    // service has no concept of any specific entities it must be set by the specific game.
+    input   chan Msg
 }
 
 func NewGame(svc ServiceContext) *Game {
     var uid UniqueId = 0 // Game uid is always zero
     ents := make(map[chan Msg]Entity)
-    return &Game{svc, ents, uid + 1}
+    hq := NewHandlerQueue()
+    return &Game{hq, svc, ents, uid + 1, nil}
 }
 
+func (g *Game) Chan() chan Msg { return g.input }
+
 func (g *Game) Run(input chan Msg) {
+    g.input = input
     g.waitOnServiceStart(input)
     InitFunc(g, g.svc)
 
@@ -55,13 +59,13 @@ func (g *Game) Run(input chan Msg) {
         // Tell all the entities that a new tick has started
         ent_num := len(g.ents) // Store ent count for *this* tick
         for ent := range g.ents {
-            ent <- tick_msg
+            Send(g, ent, tick_msg)
         }
 
         // Listen for any service messages
         // Break out of loop once all entities have updated
         for {
-            msg := <-input
+            msg := g.GetMsg(input)
             switch m := msg.(type) {
             case MsgTick:
                 updated[m.Origin] = true // bool value doesn't matter
@@ -73,13 +77,13 @@ func (g *Game) Run(input chan Msg) {
             case MsgEntityRemoved: // TODO: Counts as imperative here, fix?
                 remove_list = append(remove_list, m.Entity.Chan)
             case MsgListEntities:
-                m.Reply <- g.makeEntityList()
+                Send(g, m.Reply, g.makeEntityList())
             case MsgSpawnEntity:
                 g.spawnEntity(m)
             }
         }
     update_end:
-        g.svc.Comm <- tick_msg
+        Send(g, g.svc.Comm, tick_msg)
 
         // Remove all entities that reported themselves to be removed
         for _, ent := range remove_list {
@@ -101,13 +105,13 @@ func (g *Game) Run(input chan Msg) {
 func (g *Game) AddEntity(ent Entity) {
     g.ents[ent.Chan()] = ent
     msg := MsgEntityAdded{NewEntityDesc(ent)}
-    g.svc.PubSub <- pubsub.PublishMsg{"entity", msg}
+    Send(g, g.svc.PubSub, pubsub.PublishMsg{"entity", msg})
 }
 
 func (g *Game) RemoveEntity(ent Entity) {
     g.ents[ent.Chan()] = nil, false
     msg := MsgEntityRemoved{NewEntityDesc(ent)}
-    g.svc.PubSub <- pubsub.PublishMsg{"entity", msg}
+    Send(g, g.svc.PubSub, pubsub.PublishMsg{"entity", msg})
 }
 
 func (g *Game) makeEntityList() MsgListEntities {
@@ -161,9 +165,7 @@ func (g *Game) spawnEntity(msg MsgSpawnEntity) {
     g.AddEntity(p)
     go p.Run(g.svc)
     if msg.Reply != nil {
-        go func() {
-            desc := NewEntityDesc(p)
-            msg.Reply <- desc
-        }()
+        desc := NewEntityDesc(p)
+        Send(g, msg.Reply, desc)
     }
 }

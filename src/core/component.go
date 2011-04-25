@@ -6,7 +6,10 @@
 
 package core
 
-import "core/cmpId"
+import (
+    "runtime"
+    "core/cmpId"
+)
 
 // Identifies a single state type
 type StateId int
@@ -61,6 +64,8 @@ type Entity interface {
     // Returns the Entity's communication channel. Returns nil if Run() has not
     // yet been called.
     Chan() chan Msg
+    // Somewhat of a hack to support MsgHandler
+    HandleMsg(msg Msg)
 }
 
 // Simplified declaration
@@ -71,6 +76,8 @@ type ActionList map[ActionId]Action
 // Contains all the data that each component needs.
 // TODO: Rename to 'Component'?
 type CmpData struct {
+    *HandlerQueue
+    svc  ServiceContext
     uid  UniqueId
     id   EntityId
     name string
@@ -83,10 +90,11 @@ type CmpData struct {
 // Creates a CmpData and initializes its containers. The passed values are data
 // relating to a specific entity.
 func NewCmpData(uid UniqueId, id EntityId, name string) *CmpData {
+    hq := NewHandlerQueue()
     states := make(StateList)
     actions := make(ActionList)
     ch := make(chan Msg)
-    return &CmpData{uid, id, name, states, actions, ch}
+    return &CmpData{hq, ServiceContext{}, uid, id, name, states, actions, ch}
 }
 
 // The next functions form the core functionality of a component.
@@ -121,33 +129,36 @@ func (cd *CmpData) Chan() chan Msg { return cd.input }
 
 // Main loop which handles all component tasks.
 func (cd *CmpData) Run(svc ServiceContext) {
+    cd.svc = svc
     for {
-        msg := <-cd.input
+        cd.handle(cd.GetMsg(cd.input))
+    }
+}
 
-        // Call the appropriate function based on the msg type
-        switch m := msg.(type) {
-        case MsgTick:
-            // Check at the start of the tick because Game actually removes at
-            // the end of the previous tick
-            if _, ok := cd.states[cmpId.Remove]; ok {
-                m.Origin <- MsgTick{cd.input}
-                return // Entity was removed, bail
-            }
-            cd.update(svc)
-            m.Origin <- MsgTick{cd.input} // Reply that we are updated
-        case MsgGetState:
-            cd.sendState(m)
-        case MsgGetAllStates:
-            cd.sendAllStates(m)
-        case MsgSetState:
-            cd.SetState(m.State)
-        case MsgAddAction:
+func (cd *CmpData) handle(msg Msg) {
+    // Call the appropriate function based on the msg type
+    switch m := msg.(type) {
+    case MsgTick:
+        // Check at the start of the tick because Game actually removes at
+        // the end of the previous tick
+        if _, ok := cd.states[cmpId.Remove]; ok {
+            Send(cd, m.Origin, MsgTick{cd.input})
+            runtime.Goexit() // Entity was removed, bail
+        }
+        cd.update(cd.svc)
+        Send(cd, m.Origin, MsgTick{cd.input}) // Reply that we are updated
+    case MsgGetState:
+        cd.sendState(m)
+    case MsgGetAllStates:
+        cd.sendAllStates(m)
+    case MsgSetState:
+        cd.SetState(m.State)
+    case MsgAddAction:
+        cd.AddAction(m.Action)
+    case MsgRunAction:
+        m.Action.Act(cd, cd.svc)
+        if m.Add {
             cd.AddAction(m.Action)
-        case MsgRunAction:
-            m.Action.Act(cd, svc)
-            if m.Add {
-                cd.AddAction(m.Action)
-            }
         }
     }
 }
@@ -162,15 +173,15 @@ func (cd *CmpData) update(svc ServiceContext) {
 // Send back the requested State on the provided channel
 func (cd *CmpData) sendState(msg MsgGetState) {
     state := cd.states[msg.Id]
-    msg.StateReply <- state
+    Send(cd, msg.Reply, state)
 }
 
 // Send back all states on the provided channel
 func (cd *CmpData) sendAllStates(msg MsgGetAllStates) {
     for _, v := range cd.states {
-        msg.StateReply <- v
+        Send(cd, msg.Reply, v)
     }
-    close(msg.StateReply)
+    close(msg.Reply)
 }
 
 // Entity descriptor, contains all the relevant information for a given entity

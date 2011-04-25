@@ -31,40 +31,49 @@ func hashV3(vec *s3dm.V3) string {
 // into a grid, each of part of the grid is a cell. Currently, only one entity may
 // occupy a cell at any given time.
 type World struct {
+    *HandlerQueue
     svc ServiceContext
     // Entities may be looked up by position with this
     ents map[string]chan Msg
     // Entity position (or cells) as 3D vectors may be looked up with this
     pos map[UniqueId]*s3dm.V3
+    // Listens on this channel to receive messages
+    input chan Msg
 }
 
 func NewWorld(svc ServiceContext) *World {
+    hq := NewHandlerQueue()
     ents := make(map[string]chan Msg)
     pos := make(map[UniqueId]*s3dm.V3)
-    return &World{svc, ents, pos}
+    return &World{hq, svc, ents, pos, nil}
 }
+
+func (w *World) Chan() chan Msg { return w.input }
 
 func (w *World) Run(input chan Msg) {
     // Subscribe to listen for new entities in order to track their position
-    w.svc.PubSub <- pubsub.SubscribeMsg{"entity", input}
-    w.svc.Game <- MsgTick{input} // Service is ready
+    Send(w, w.svc.PubSub, pubsub.SubscribeMsg{"entity", input})
+    Send(w, w.svc.Game, MsgTick{input}) // Service is ready
 
     for {
-        msg := <-input
-        switch m := msg.(type) {
-        case MoveMsg:
-            w.moveEnt(m.Ent, m.Vel)
-        case MsgEntityAdded:
-            reply := make(chan State)
-            m.Entity.Chan <- MsgGetState{cmpId.Position, reply}
-            if pos, ok := (<-reply).(Position); ok {
-                w.putInEmptyPos(m.Entity, pos.Position)
-            }
-        case MsgEntityRemoved:
-            pos := w.pos[m.Entity.Uid]
-            w.pos[m.Entity.Uid] = nil, false
-            w.ents[hashV3(pos)] = nil, false
+        w.handle(w.GetMsg(input))
+    }
+}
+
+func (w *World) handle(msg Msg) {
+    switch m := msg.(type) {
+    case MoveMsg:
+        w.moveEnt(m.Ent, m.Vel)
+    case MsgEntityAdded:
+        reply := make(chan Msg)
+        Send(w, m.Entity.Chan, MsgGetState{cmpId.Position, reply})
+        if pos, ok := Recv(w, reply).(Position); ok {
+            w.putInEmptyPos(m.Entity, pos.Position)
         }
+    case MsgEntityRemoved:
+        pos := w.pos[m.Entity.Uid]
+        w.pos[m.Entity.Uid] = nil, false
+        w.ents[hashV3(pos)] = nil, false
     }
 }
 
@@ -81,7 +90,8 @@ func (w *World) putInEmptyPos(ent *EntityDesc, pos *s3dm.V3) {
     }
     w.setPos(ent, pos, nil)
     if !pos.Equals(old_pos) {
-        ent.Chan <- MsgSetState{Position{pos}} // Update with new pos
+        // Update with new pos
+        Send(w, ent.Chan, MsgSetState{Position{pos}})
     }
 }
 
@@ -113,15 +123,16 @@ func (w *World) moveEnt(ent *EntityDesc, vel *s3dm.V3) {
         // Update position if movement is less than 1, this lets spider move slowly
         if math.Fabs(vel.X) < 1 && math.Fabs(vel.Y) < 1 {
             w.pos[ent.Uid] = new_pos
-            ent.Chan <- MsgSetState{Position{new_pos}}
+            Send(w, ent.Chan, MsgSetState{Position{new_pos}})
         }
-        ent_ch <- MsgRunAction{Attack{ent}, false} // Can't move there, attack instead
+        // Can't move there, attack instead
+        Send(w, ent_ch, MsgRunAction{Attack{ent}, false})
         return
     }
     // If not, move the entity to the new pos
     w.setPos(ent, new_pos, old_pos)
     // Update entity position state
-    ent.Chan <- MsgSetState{Position{new_pos}}
+    Send(w, ent.Chan, MsgSetState{Position{new_pos}})
 
     // Spawn spiders as players move around
     if ent.Id == cmpId.Player {
@@ -155,17 +166,15 @@ func (w *World) spawnSpiders(pos *s3dm.V3) {
 
     // Spawn spiders at a random point in a ring around the player
     // between MIN_DIST and MAX_DIST.
-    reply := make(chan *EntityDesc)
+    reply := make(chan Msg)
     for i := 0; i < count; i++ {
         radius := rand.Float64()*(MAX_DIST-MIN_DIST) + MIN_DIST
         angle := rand.Float64() * 2. * math.Pi
         x := pos.X + radius*math.Cos(angle)
         y := pos.Y + radius*math.Sin(angle)
         // Create the spider entity and position it
-        go func(X, Y float64) {
-            w.svc.Game <- game.MsgSpawnEntity{InitSpider, reply}
-            spider := <-reply
-            spider.Chan <- MsgSetState{Position{s3dm.NewV3(X, Y, 0.)}}
-        }(x, y)
+        Send(w, w.svc.Game, game.MsgSpawnEntity{InitSpider, reply})
+        spider := Recv(w, reply).(*EntityDesc)
+        Send(w, spider.Chan, MsgSetState{Position{s3dm.NewV3(x, y, 0.)}})
     }
 }

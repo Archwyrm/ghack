@@ -11,7 +11,6 @@ import (
     "comm"
     "pubsub"
     "sf"
-    "util"
 )
 
 func main() {
@@ -21,7 +20,6 @@ func main() {
     go comm.NewCommService(svc, "0.0.0.0:9190").Run(svc.Comm)
     go pubsub.NewPubSub(svc).Run(svc.PubSub)
     go sf.NewWorld(svc).Run(svc.World)
-    svc.World = util.MsgBuffer(svc.World) // Buffer input to World
 
     game.InitFunc = initGameSvc
     game := game.NewGame(svc)

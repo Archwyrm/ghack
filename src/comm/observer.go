@@ -157,8 +157,8 @@ func (v *view) replicate(uid UniqueId, ctrl chan Msg) {
     msg.Uid = uid
 
     for {
-        reply := make(chan State)
-        request.StateReply = reply
+        reply := make(chan Msg)
+        request.Reply = reply
         select {
         // TODO: White or black list?
         // Get whitelisted states from entity (must check for new states)
@@ -167,7 +167,8 @@ func (v *view) replicate(uid UniqueId, ctrl chan Msg) {
             handleCtrl(msg)
         }
 
-        for s := range reply {
+        for m := range reply {
+            s := m.(State)
             if !checkWhiteList(s.Id()) {
                 continue
             }

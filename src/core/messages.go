@@ -23,8 +23,8 @@ type MsgQuit struct{}
 // Message requesting a certain state to be returned
 // Contains a channel where the reply should be sent
 type MsgGetState struct {
-    Id         StateId
-    StateReply chan State
+    Id    StateId
+    Reply chan Msg // Reply type is State
 }
 
 // Message requesting that a certain state should be set
@@ -32,11 +32,11 @@ type MsgSetState struct {
     State State
 }
 
-// Message requesting all states that an entity has
-// StateReply will be ranged over by the originator of request and should be
-// closed once all states have been sent.
+// Message requesting all states that an entity has. Reply will be ranged over
+// by the originator of request and should be closed  once all states have been
+// sent.
 type MsgGetAllStates struct {
-    StateReply chan State
+    Reply chan Msg // Reply type is State
 }
 
 // Message to add an action that contains the action to be added
@@ -56,7 +56,7 @@ type MsgRunAction struct {
 // an actual list. Each triple of lists has matching indices in their respective
 // slices.
 type MsgListEntities struct {
-    Reply    chan Msg // Channel to reply on
+    Reply    chan Msg // Reply type is *EntityDesc
     Entities []*EntityDesc
 }
 

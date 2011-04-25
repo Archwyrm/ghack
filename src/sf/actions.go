@@ -8,7 +8,6 @@ import (
     "github.com/tm1rbrt/s3dm"
     .   "core"
     "sf/cmpId"
-    "util"
     "pubsub"
 )
 
@@ -21,7 +20,7 @@ func (a Move) Name() string { return "Move" }
 
 // Modifies the Position of an Entity with the passed Move vector.
 func (a Move) Act(ent Entity, svc ServiceContext) {
-    svc.World <- MoveMsg{NewEntityDesc(ent), a.Direction}
+    Send(ent, svc.World, MoveMsg{NewEntityDesc(ent), a.Direction})
 }
 
 // Does damage to the calling entity, the entity being attacked.
@@ -41,11 +40,11 @@ func (a Attack) Act(ent Entity, svc ServiceContext) {
     }
     health.Health-- // Extremely complex damage formula
     ed := NewEntityDesc(ent)
-    util.Send(svc.PubSub, pubsub.PublishMsg{"combat", MsgCombatHit{a.Attacker, ed, 1}})
+    Send(ent, svc.PubSub, pubsub.PublishMsg{"combat", MsgCombatHit{a.Attacker, ed, 1}})
     if health.Health <= 0 {
         ent.SetState(Remove{})
-        util.Send(svc.Game, MsgEntityRemoved{ed})
-        util.Send(svc.PubSub, pubsub.PublishMsg{"combat", MsgEntityDeath{ed, a.Attacker}})
+        Send(ent, svc.Game, MsgEntityRemoved{NewEntityDesc(ent)})
+        Send(ent, svc.PubSub, pubsub.PublishMsg{"combat", MsgEntityDeath{ed, a.Attacker}})
     }
     ent.SetState(health)
 }

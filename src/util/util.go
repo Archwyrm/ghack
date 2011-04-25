@@ -58,7 +58,7 @@ func MsgBuffer(ch chan Msg) chan Msg {
 // Performs asynchronus send of msg to ch. Initially tries to send directly to
 // the channel, if this is not immediately possible, a goroutine is started to
 // perform the send. This has the effect of Send not blocking.
-func Send(ch chan Msg, msg Msg) {
+func SendAsync(ch chan Msg, msg Msg) {
     select {
     case ch <- msg:
     default:

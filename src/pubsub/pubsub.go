@@ -36,45 +36,45 @@ type UnsubscribeMsg struct {
 
 // Publish/Subscribe struct
 type PubSub struct {
+    *HandlerQueue
     svc           ServiceContext
     subscriptions map[string][]ChanType
+    input         chan Msg
 }
 
 // Creates a new PubSub and returns a pointer to it
 func NewPubSub(svc ServiceContext) *PubSub {
-    return &PubSub{svc, make(map[string][]ChanType)}
+    hq := NewHandlerQueue()
+    return &PubSub{hq, svc, make(map[string][]ChanType), nil}
 }
+
+func (ps *PubSub) Chan() chan Msg { return ps.input }
 
 // Starts a loop to receive and handle messages from the passed channel
 func (ps *PubSub) Run(input chan Msg) {
-    ps.svc.Game <- MsgTick{input} // Service is ready
+    ps.input = input
+    Send(ps, ps.svc.Game, MsgTick{input}) // Service is ready
 
     for {
-        msg := <-input
+        ps.handle(ps.GetMsg(input))
+    }
+}
 
-        switch m := msg.(type) {
-        case PublishMsg:
-            ps.publish(m)
-
-        case SubscribeMsg:
-            ps.subscribe(m)
-
-        case UnsubscribeMsg:
-            ps.unsubscribe(m)
-        }
+func (ps *PubSub) handle(msg Msg) {
+    switch m := msg.(type) {
+    case PublishMsg:
+        ps.publish(m)
+    case SubscribeMsg:
+        ps.subscribe(m)
+    case UnsubscribeMsg:
+        ps.unsubscribe(m)
     }
 }
 
 // Sends a message to subscribers asynchronusly if the receiving channel blocks
 func (ps *PubSub) publish(msg PublishMsg) {
     for _, sub := range ps.subscriptions[msg.Topic] {
-        select {
-        case sub <- msg.Data:
-        default:
-            go func(ch chan Msg, data interface{}) {
-                ch <- data
-            }(sub, msg.Data)
-        }
+        Send(ps, sub, msg.Data)
     }
 }
 

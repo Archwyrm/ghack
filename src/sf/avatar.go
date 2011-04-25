@@ -29,9 +29,9 @@ type avatar struct {
 func MakeAvatar(svc ServiceContext, input chan *protocol.Message) (chan Msg,
 UniqueId) {
     ctrl := make(chan Msg)
-    reply := make(chan *EntityDesc)
+    reply := make(chan Msg)
     svc.Game <- game.MsgSpawnEntity{InitPlayer, reply}
-    player := <-reply
+    player := (<-reply).(*EntityDesc)
     a := avatar{svc, *player}
     go a.control(ctrl, input)
     return ctrl, player.Uid
