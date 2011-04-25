@@ -8,7 +8,7 @@ import (
     "testing"
     "time"
     "pubsub"
-    "core"
+    .   "core"
     "util"
 )
 
@@ -28,7 +28,7 @@ func TestSubscribeAndPublish(t *testing.T) {
     // Publish and verify one message at a time
     for _, msg := range testData {
         // Publish message
-        go func(ps chan core.Msg, data string) {
+        go func(ps chan Msg, data string) {
             ps <- pubsub.PublishMsg{topic, data}
         }(ps, msg)
 
@@ -98,7 +98,7 @@ func TestUnsubscribe(t *testing.T) {
 }
 
 // Makes 'count' channels and subscribes them
-func makeAndSubscribe(ps chan core.Msg, topic string, count int) (chans []pubsub.ChanType) {
+func makeAndSubscribe(ps chan Msg, topic string, count int) (chans []pubsub.ChanType) {
     for i := 0; i < count; i++ {
         ch := make(pubsub.ChanType)
         ps <- pubsub.SubscribeMsg{topic, ch}
@@ -108,10 +108,10 @@ func makeAndSubscribe(ps chan core.Msg, topic string, count int) (chans []pubsub
 }
 
 // Starts the PubSub in a goroutine and returns a channel to it
-func startPubSub() (ps chan core.Msg) {
-    svc := core.NewServiceContext()
+func startPubSub() (ps chan Msg) {
+    svc := NewServiceContext()
     psObj := pubsub.NewPubSub(svc)
-    ps = make(chan core.Msg)
+    ps = make(chan Msg)
     go util.Drain(svc.Game) // For service ready msg
     go psObj.Run(ps)
     return

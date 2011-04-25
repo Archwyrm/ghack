@@ -13,48 +13,48 @@ import (
     "fmt"
     "reflect"
     "runtime"
-    "core"
+    .   "core"
     "pubsub"
     "util"
 )
 
 // Signal that an entity should be sent to a client
-// TODO: Combine with core.MsgEntityAdded somehow?
+// TODO: Combine with MsgEntityAdded somehow?
 type MsgAddEntity struct {
-    Uid  core.UniqueId
+    Uid  UniqueId
     Name string
 }
 
 // Signal that an entity should be removed from a client
-// TODO: Combine with core.MsgEntityRemoved somehow?
+// TODO: Combine with MsgEntityRemoved somehow?
 type MsgRemoveEntity struct {
-    Uid  core.UniqueId
+    Uid  UniqueId
     Name string
 }
 
 // Signal that a state should have its value updated on a client
 type MsgUpdateState struct {
-    Uid   core.UniqueId
-    State core.State // Contains Name and Value needed for protocol
+    Uid   UniqueId
+    State State // Contains Name and Value needed for protocol
 }
 
 // Replicates data to a connected client. Views are created for each replicated entity.
 // This keeps the game state on the client in sync with the server.
 type observer struct {
-    svc core.ServiceContext
+    svc ServiceContext
     // The client on whose behalf this observer replicates
-    client chan core.Msg
+    client chan Msg
     // Maps the entity to its view's control channel
     // TODO: Store by Uid, not chan?
-    views map[chan core.Msg]chan core.Msg
+    views map[chan Msg]chan Msg
     // Channel to control this observer
-    ctrl chan core.Msg
+    ctrl chan Msg
 }
 
 // Creates an observer instance in a new goroutine and returns a control channel
-func createObserver(svc core.ServiceContext, client chan core.Msg) chan core.Msg {
+func createObserver(svc ServiceContext, client chan Msg) chan Msg {
     // Create struct
-    obs := &observer{svc, client, make(map[chan core.Msg]chan core.Msg), make(chan core.Msg)}
+    obs := &observer{svc, client, make(map[chan Msg]chan Msg), make(chan Msg)}
     go obs.observe()
     return obs.ctrl
 }
@@ -62,9 +62,9 @@ func createObserver(svc core.ServiceContext, client chan core.Msg) chan core.Msg
 // Do initial observer set up
 func (obs *observer) init() {
     // Get list of entities for initial sync
-    reply := make(chan core.Msg)
-    obs.svc.Game <- core.MsgListEntities{Reply: reply}
-    list, ok := (<-reply).(core.MsgListEntities)
+    reply := make(chan Msg)
+    obs.svc.Game <- MsgListEntities{Reply: reply}
+    list, ok := (<-reply).(MsgListEntities)
     if !ok {
         panic("Request received incorrect reply")
     }
@@ -83,11 +83,11 @@ func (obs *observer) observe() {
     for {
         msg := <-obs.ctrl
         switch m := msg.(type) {
-        case core.MsgTick: // Pass update msg to views
+        case MsgTick: // Pass update msg to views
             for _, v := range obs.views {
                 v <- msg
             }
-        case core.MsgQuit: // Client has disconnected, shut everything down
+        case MsgQuit: // Client has disconnected, shut everything down
             // Views may have pending updates, drain and discard
             go util.DrainUntilQuit(obs.client)
             for _, v := range obs.views {
@@ -96,7 +96,7 @@ func (obs *observer) observe() {
             // Close the drain now that all views have gotten quit msg
             obs.client <- msg
             return
-        case core.MsgEntityAdded:
+        case MsgEntityAdded:
             ent := m.Entity
             if checkBlacklist(ent.Id) {
                 continue
@@ -107,11 +107,11 @@ func (obs *observer) observe() {
                 panic(str)
             }
             obs.addView(ent)
-        case core.MsgEntityRemoved:
+        case MsgEntityRemoved:
             ent := m.Entity
             // Signal quit to the correct view
             if ch, ok := obs.views[ent.Chan]; ok {
-                ch <- core.MsgQuit{}
+                ch <- MsgQuit{}
             } else {
                 str := "Tried to remove an unadded entity:\n"
                 str = fmt.Sprint(str, ent.Uid, " ", ent.Name)
@@ -126,38 +126,38 @@ func (obs *observer) observe() {
 }
 
 // Creates a new view and starts it replicating
-func (obs *observer) addView(ent *core.EntityDesc) {
+func (obs *observer) addView(ent *EntityDesc) {
     obs.client <- MsgAddEntity{ent.Uid, ent.Name}
     v := &view{client: obs.client, entity: ent.Chan}
-    v_ch := make(chan core.Msg)
+    v_ch := make(chan Msg)
     obs.views[ent.Chan] = v_ch
     go v.replicate(ent.Uid, v_ch)
 }
 
 // Checks to see if this entity is blacklisted
 // Returns true if blacklisted, false otherwise
-func checkBlacklist(id core.EntityId) bool {
+func checkBlacklist(id EntityId) bool {
     return false // TODO: Actually check
 }
 
 // Replicates an individual entity. Each state of the watched entity is tracked
 // for changes. If the state has changed then an update is sent to the client.
 type view struct {
-    client chan core.Msg
-    entity chan core.Msg
-    states core.StateList // Current value of each replicated state
+    client chan Msg
+    entity chan Msg
+    states StateList // Current value of each replicated state
 }
 
-func (v *view) replicate(uid core.UniqueId, ctrl chan core.Msg) {
+func (v *view) replicate(uid UniqueId, ctrl chan Msg) {
     // TODO: Eventually this list will fill with states that are no longer in
     // the entity, we need a mechanism to clear it out occasionally
-    v.states = make(core.StateList)
-    request := core.MsgGetAllStates{}
+    v.states = make(StateList)
+    request := MsgGetAllStates{}
     msg := MsgUpdateState{}
     msg.Uid = uid
 
     for {
-        reply := make(chan core.State)
+        reply := make(chan State)
         request.StateReply = reply
         select {
         // TODO: White or black list?
@@ -188,19 +188,19 @@ func (v *view) replicate(uid core.UniqueId, ctrl chan core.Msg) {
     }
 }
 
-func handleCtrl(msg core.Msg) {
-    if _, ok := msg.(core.MsgQuit); ok {
+func handleCtrl(msg Msg) {
+    if _, ok := msg.(MsgQuit); ok {
         runtime.Goexit()
     }
 }
 
 // Checks to see if this entity is whitelisted
 // Returns true if whitelisted, false otherwise
-func checkWhiteList(id core.StateId) bool {
+func checkWhiteList(id StateId) bool {
     return true // TODO: Actually check
 }
 
 // Send events to client
-func (obs *observer) eventListener(msg core.Msg) {
+func (obs *observer) eventListener(msg Msg) {
     obs.client <- msg
 }

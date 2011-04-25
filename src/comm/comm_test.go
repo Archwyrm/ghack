@@ -8,7 +8,7 @@ import (
     "testing"
     "net"
     "time"
-    "core"
+    .   "core"
     "game"
     "protocol"
     "pubsub"
@@ -16,13 +16,13 @@ import (
 )
 
 // Starts the server with a default ServiceContext for tests that don't need it
-func startServer(t *testing.T) (svc *CommService, cs chan core.Msg) {
-    return startServerWithCtx(t, core.NewServiceContext())
+func startServer(t *testing.T) (svc *CommService, cs chan Msg) {
+    return startServerWithCtx(t, NewServiceContext())
 }
 
 // Starts the server with a user specificied ServiceContext
 func startServerWithCtx(t *testing.T,
-ctx core.ServiceContext) (svc *CommService, cs chan core.Msg) {
+ctx ServiceContext) (svc *CommService, cs chan Msg) {
     // Start new service on port 9190
     svc = NewCommService(ctx, ":9190")
     go util.Drain(ctx.Game) // For service ready msg
@@ -113,7 +113,7 @@ func TestConnect(t *testing.T) {
         }
 
         if !serviceClosed {
-            cs <- core.MsgQuit{}
+            cs <- MsgQuit{}
         }
     }()
     disconnect := makeDisconnect(protocol.Disconnect_QUIT, "Test finished")
@@ -130,7 +130,7 @@ func TestServerQuit(t *testing.T) {
     fd := newTestClient(t)
     connectClient(t, fd)
 
-    cs <- core.MsgQuit{}
+    cs <- MsgQuit{}
     time.Sleep(1e7) // Block thread 10ms to let the server respond
     if len(svc.clients) > 0 {
         t.Fatalf("Client not removed from server list")

@@ -2,7 +2,7 @@
 // Use of this source code is governed by the GNU General Public License
 // version 3 (or any later version). See the file COPYING for details.
 
-// Tests that reflection based processing on various types of core.State creates
+// Tests that reflection based processing on various types of State creates
 // the right messages to send to clients.
 
 package comm
@@ -10,7 +10,7 @@ package comm
 import (
     "testing"
     "reflect"
-    "core"
+    .   "core"
     "protocol"
     "github.com/tm1rbrt/s3dm"
     "goprotobuf.googlecode.com/hg/proto"
@@ -21,29 +21,29 @@ type multipleFieldState struct {
     Value2 int
 }
 
-func (x multipleFieldState) Id() core.StateId { return 1 }
-func (x multipleFieldState) Name() string     { return "MultipleFieldState" }
+func (x multipleFieldState) Id() StateId  { return 1 }
+func (x multipleFieldState) Name() string { return "MultipleFieldState" }
 
 type sliceFieldState struct {
     Value []int
 }
 
-func (x sliceFieldState) Id() core.StateId { return 2 }
-func (x sliceFieldState) Name() string     { return "SliceFieldState" }
+func (x sliceFieldState) Id() StateId  { return 2 }
+func (x sliceFieldState) Name() string { return "SliceFieldState" }
 
 type ptrFieldState struct {
     Value *int
 }
 
-func (x ptrFieldState) Id() core.StateId { return 3 }
-func (x ptrFieldState) Name() string     { return "ptrFieldState" }
+func (x ptrFieldState) Id() StateId  { return 3 }
+func (x ptrFieldState) Name() string { return "ptrFieldState" }
 
 type v3FieldState struct {
     Value s3dm.V3
 }
 
-func (x v3FieldState) Id() core.StateId { return 4 }
-func (x v3FieldState) Name() string     { return "v3FieldState" }
+func (x v3FieldState) Id() StateId  { return 4 }
+func (x v3FieldState) Name() string { return "v3FieldState" }
 
 func TestSingleFieldState(t *testing.T) {
     // testState is made available by observer_test.go

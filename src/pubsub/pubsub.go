@@ -10,10 +10,10 @@
 package pubsub
 
 import (
-    "core"
+    .   "core"
 )
 
-type ChanType chan core.Msg
+type ChanType chan Msg
 
 // Message to signal publishing of the passed data
 type PublishMsg struct {
@@ -36,18 +36,18 @@ type UnsubscribeMsg struct {
 
 // Publish/Subscribe struct
 type PubSub struct {
-    svc           core.ServiceContext
+    svc           ServiceContext
     subscriptions map[string][]ChanType
 }
 
 // Creates a new PubSub and returns a pointer to it
-func NewPubSub(svc core.ServiceContext) *PubSub {
+func NewPubSub(svc ServiceContext) *PubSub {
     return &PubSub{svc, make(map[string][]ChanType)}
 }
 
 // Starts a loop to receive and handle messages from the passed channel
-func (ps *PubSub) Run(input chan core.Msg) {
-    ps.svc.Game <- core.MsgTick{input} // Service is ready
+func (ps *PubSub) Run(input chan Msg) {
+    ps.svc.Game <- MsgTick{input} // Service is ready
 
     for {
         msg := <-input
@@ -71,7 +71,7 @@ func (ps *PubSub) publish(msg PublishMsg) {
         select {
         case sub <- msg.Data:
         default:
-            go func(ch chan core.Msg, data interface{}) {
+            go func(ch chan Msg, data interface{}) {
                 ch <- data
             }(sub, msg.Data)
         }

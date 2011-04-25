@@ -6,13 +6,13 @@ package comm
 
 import (
     "reflect"
-    "core"
+    .   "core"
     "protocol"
     "goprotobuf.googlecode.com/hg/proto"
 )
 
 // Creates the right type of StateValue message for an arbitrary State type.
-func packState(state core.State) (msg *protocol.StateValue) {
+func packState(state State) (msg *protocol.StateValue) {
     val := reflect.NewValue(state)
     state_v, ok := val.(*reflect.StructValue)
     if !ok {

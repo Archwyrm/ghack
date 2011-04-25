@@ -13,7 +13,7 @@ import (
     "encoding/binary"
     "bytes"
     "fmt"
-    "core"
+    .   "core"
     "protocol"
     "goprotobuf.googlecode.com/hg/proto"
 )
@@ -27,8 +27,8 @@ const (
 
 var byteOrder = binary.LittleEndian
 // Game specific function for creating an avatar, set by game code.
-var AvatarFunc func(core.ServiceContext, chan *protocol.Message) (chan core.Msg,
-core.UniqueId) = dummyAvatarFunc
+var AvatarFunc func(ServiceContext, chan *protocol.Message) (chan Msg,
+UniqueId) = dummyAvatarFunc
 
 // addClient and removeClient are internal messages for manipulating the list
 // of clients in a thread safe way
@@ -42,20 +42,20 @@ type removeClientMsg struct {
 }
 
 type CommService struct {
-    svc     core.ServiceContext
+    svc     ServiceContext
     clients []*client
     address string
 }
 
-func NewCommService(svc core.ServiceContext, address string) *CommService {
+func NewCommService(svc ServiceContext, address string) *CommService {
     return &CommService{svc, make([]*client, 0, 5), address}
 }
 
-func (cs *CommService) Run(input chan core.Msg) {
+func (cs *CommService) Run(input chan Msg) {
     shutdown := make(chan bool)
     go listen(cs.svc, input, "tcp", cs.address, shutdown)
 
-    cs.svc.Game <- core.MsgTick{input} // Service is ready
+    cs.svc.Game <- MsgTick{input} // Service is ready
 
     for {
         msg := <-input
@@ -65,11 +65,11 @@ func (cs *CommService) Run(input chan core.Msg) {
             log.Println(m.cl.name, "connected")
         case removeClientMsg:
             cs.removeClient(m.cl, m.reason)
-        case core.MsgQuit:
+        case MsgQuit:
             shutdown <- true      // stop listening first so we don't
             cs.removeAllClients() // add any more clients
             return
-        case core.MsgTick: // Client state should be updated
+        case MsgTick: // Client state should be updated
             for _, cl := range cs.clients {
                 cl.observer <- m
             }
@@ -105,8 +105,8 @@ func (cs *CommService) removeClient(cl *client, reason string) {
     cl.Quit()
 }
 
-func listen(svc core.ServiceContext, cs chan<- core.Msg, protocol string,
-address string, shutdown chan bool) {
+func listen(svc ServiceContext, cs chan<- Msg, protocol string, address string,
+shutdown chan bool) {
     l, err := net.Listen(protocol, address)
     if err != nil {
         log.Println("Error listening:", err)
@@ -141,7 +141,7 @@ address string, shutdown chan bool) {
     }
 }
 
-func connect(svc core.ServiceContext, cs chan<- core.Msg, conn net.Conn) {
+func connect(svc ServiceContext, cs chan<- Msg, conn net.Conn) {
     defer logAndClose(conn)
 
     // Read connect message
@@ -294,22 +294,22 @@ type client struct {
     // Permission set mask
     permissions uint32
     // Queue of messages to be sent to client. observer fills this channel.
-    SendQueue chan core.Msg
+    SendQueue chan Msg
     // Queue of messages received from client. avatar drains this channel.
     // Messages are passed in their original protocol form as we cannot
     // anticipate game defined messages here.
     RecvQueue chan *protocol.Message
     // Msgs meant for observer specifically and *not* the client are sent here.
     // e.g.: tick, quit, etc
-    observer chan core.Msg
+    observer chan Msg
     // Control channel for avatar
-    avatar chan core.Msg
+    avatar chan Msg
 }
 
 // Create a new client and start up send/receive goroutines.
-func newClient(svc core.ServiceContext, cs chan<- core.Msg, conn net.Conn,
+func newClient(svc ServiceContext, cs chan<- Msg, conn net.Conn,
 l *protocol.Login) *client {
-    send_ch := make(chan core.Msg)
+    send_ch := make(chan Msg)
     recv_ch := make(chan *protocol.Message)
     obs := createObserver(svc, send_ch)
     avatar, uid := AvatarFunc(svc, recv_ch)
@@ -329,13 +329,13 @@ l *protocol.Login) *client {
     // otherwise the uid is just a dummy and should not be sent. This mostly
     // applies to tests.
     if avatar != nil {
-        send_ch <- core.MsgAssignControl{uid, false}
+        send_ch <- MsgAssignControl{uid, false}
     }
     return cl
 }
 
 // Receives messages from remote client and acts upon them if appropriate.
-func (cl *client) RecvLoop(cs chan<- core.Msg) {
+func (cl *client) RecvLoop(cs chan<- Msg) {
     defer logAndClose(cl.conn)
     for {
         msg, err := readMessage(cl.conn)
@@ -357,7 +357,7 @@ func (cl *client) RecvLoop(cs chan<- core.Msg) {
 }
 
 // Sends messages over the remote conn that come through the queue.
-func (cl *client) SendLoop(cs chan<- core.Msg) {
+func (cl *client) SendLoop(cs chan<- Msg) {
     defer logAndClose(cl.conn)
     for {
         msg := <-cl.SendQueue
@@ -370,13 +370,13 @@ func (cl *client) SendLoop(cs chan<- core.Msg) {
         case MsgUpdateState:
             value := packState(m.State)
             err = sendMessage(cl.conn, makeUpdateState(int32(m.Uid), m.State.Name(), value))
-        case core.MsgAssignControl:
+        case MsgAssignControl:
             err = sendMessage(cl.conn, makeAssignControl(int32(m.Uid), m.Revoked))
-        case core.MsgEntityDeath:
+        case MsgEntityDeath:
             uid, name := m.Entity.Uid, m.Entity.Name
             kuid, kname := m.Killer.Uid, m.Killer.Name
             err = sendMessage(cl.conn, makeEntityDeath(int32(uid), name, int32(kuid), kname))
-        case core.MsgCombatHit:
+        case MsgCombatHit:
             auid, aname := m.Attacker.Uid, m.Attacker.Name
             vuid, vname := m.Victim.Uid, m.Victim.Name
             err = sendMessage(cl.conn, makeCombatHit(int32(auid), aname, int32(vuid), vname, m.Damage))
@@ -394,14 +394,14 @@ func (cl *client) Quit() {
     cl.conn.Close()
 
     // Close this client's observer and avatar
-    quit := core.MsgQuit{}
+    quit := MsgQuit{}
     cl.observer <- quit
     cl.avatar <- quit
 }
 
 // Return default values to satisfy tests, if returned chan is used, will cause
 // panic (of course)
-func dummyAvatarFunc(core.ServiceContext, chan *protocol.Message) (chan core.Msg,
-core.UniqueId) {
+func dummyAvatarFunc(ServiceContext, chan *protocol.Message) (chan Msg,
+UniqueId) {
     return nil, 1
 }

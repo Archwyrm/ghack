@@ -5,7 +5,7 @@
 package sf
 
 import (
-    "core"
+    .   "core"
     "sf/cmpId"
     "github.com/tm1rbrt/s3dm"
 )
@@ -14,27 +14,27 @@ type Position struct {
     Position *s3dm.V3
 }
 
-func (p Position) Id() core.StateId { return cmpId.Position }
-func (p Position) Name() string     { return "Position" }
+func (p Position) Id() StateId  { return cmpId.Position }
+func (p Position) Name() string { return "Position" }
 
 // The asset used to represent (or draw) the entity to which this state belongs.
 type Asset struct {
     Asset string
 }
 
-func (x Asset) Id() core.StateId { return cmpId.Asset }
-func (x Asset) Name() string     { return "Asset" }
+func (x Asset) Id() StateId  { return cmpId.Asset }
+func (x Asset) Name() string { return "Asset" }
 
 type Health struct {
     Health float32
 }
 
-func (x Health) Id() core.StateId { return cmpId.Health }
-func (x Health) Name() string     { return "Health" }
+func (x Health) Id() StateId  { return cmpId.Health }
+func (x Health) Name() string { return "Health" }
 
 type MaxHealth struct {
     MaxHealth float32
 }
 
-func (x MaxHealth) Id() core.StateId { return cmpId.MaxHealth }
-func (x MaxHealth) Name() string     { return "MaxHealth" }
+func (x MaxHealth) Id() StateId  { return cmpId.MaxHealth }
+func (x MaxHealth) Name() string { return "MaxHealth" }

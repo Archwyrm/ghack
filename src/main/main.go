@@ -6,7 +6,7 @@
 package main
 
 import (
-    "core"
+    .   "core"
     "game"
     "comm"
     "pubsub"
@@ -15,7 +15,7 @@ import (
 )
 
 func main() {
-    svc := core.NewServiceContext()
+    svc := NewServiceContext()
 
     comm.AvatarFunc = sf.MakeAvatar
     go comm.NewCommService(svc, "0.0.0.0:9190").Run(svc.Comm)
@@ -31,7 +31,7 @@ func main() {
 
 // Initialize the game with some default data. Eventually this will come from
 // data files and those will be loaded elsewhere.
-func initGameSvc(g *game.Game, svc core.ServiceContext) {
+func initGameSvc(g *game.Game, svc ServiceContext) {
     spider := sf.InitSpider(g.GetUid())
     g.AddEntity(spider)
     go spider.Run(svc)

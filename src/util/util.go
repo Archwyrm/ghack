@@ -6,20 +6,20 @@
 package util
 
 import (
-    "core"
+    .   "core"
 )
 
 // Drains and discards messages from the passed channel indefinitely
-func Drain(ch chan core.Msg) {
+func Drain(ch chan Msg) {
     for {
         <-ch
     }
 }
 
 // Drains and discards messages from the passed channel until a MsgQuit is received
-func DrainUntilQuit(ch chan core.Msg) {
+func DrainUntilQuit(ch chan Msg) {
     for {
-        if _, ok := (<-ch).(core.MsgQuit); ok {
+        if _, ok := (<-ch).(MsgQuit); ok {
             return
         }
     }
@@ -27,12 +27,12 @@ func DrainUntilQuit(ch chan core.Msg) {
 
 // Variable length buffer for the passed channel. Returns a channel for input.
 // TODO: Write test to ensure that this function always does the right thing
-func MsgBuffer(ch chan core.Msg) chan core.Msg {
-    in := make(chan core.Msg)
+func MsgBuffer(ch chan Msg) chan Msg {
+    in := make(chan Msg)
     go func() {
-        buf := make([]core.Msg, 0, 2)
-        var msg core.Msg
-        var out chan core.Msg // Start as nil so we don't send
+        buf := make([]Msg, 0, 2)
+        var msg Msg
+        var out chan Msg // Start as nil so we don't send
 
         // Alternate between receiving from in and sending on out. Each
         // received message gets appended onto buf and then the first value is
@@ -58,11 +58,11 @@ func MsgBuffer(ch chan core.Msg) chan core.Msg {
 // Performs asynchronus send of msg to ch. Initially tries to send directly to
 // the channel, if this is not immediately possible, a goroutine is started to
 // perform the send. This has the effect of Send not blocking.
-func Send(ch chan core.Msg, msg core.Msg) {
+func Send(ch chan Msg, msg Msg) {
     select {
     case ch <- msg:
     default:
-        go func(ch chan core.Msg, data interface{}) {
+        go func(ch chan Msg, data interface{}) {
             ch <- data
         }(ch, msg)
     }

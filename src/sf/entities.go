@@ -7,16 +7,16 @@ package sf
 
 import (
     "github.com/tm1rbrt/s3dm"
-    "core"
+    .   "core"
     "sf/cmpId"
 )
 
 type Player struct {
-    *core.CmpData
+    *CmpData
 }
 
-func InitPlayer(uid core.UniqueId) core.Entity {
-    p := &Player{core.NewCmpData(uid, cmpId.Player, "Player")}
+func InitPlayer(uid UniqueId) Entity {
+    p := &Player{NewCmpData(uid, cmpId.Player, "Player")}
     p.SetState(Position{&s3dm.V3{1, 1, 0}})
     p.SetState(Asset{"@"})
     p.SetState(Health{10})
@@ -25,11 +25,11 @@ func InitPlayer(uid core.UniqueId) core.Entity {
 }
 
 type Spider struct {
-    *core.CmpData
+    *CmpData
 }
 
-func InitSpider(uid core.UniqueId) core.Entity {
-    s := &Spider{core.NewCmpData(uid, cmpId.Spider, "Spider")}
+func InitSpider(uid UniqueId) Entity {
+    s := &Spider{NewCmpData(uid, cmpId.Spider, "Spider")}
     s.SetState(Position{&s3dm.V3{1, 1, 0}})
     s.SetState(Asset{"s"})
     s.SetState(Health{4})

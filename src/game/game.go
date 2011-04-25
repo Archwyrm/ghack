@@ -8,7 +8,7 @@ import (
     "log"
     "reflect"
     "time"
-    "core"
+    .   "core"
     "pubsub"
 )
 
@@ -16,38 +16,38 @@ var tick_rate int64 = 60            // Ticks per second
 var skip_ns int64 = 1e9 / tick_rate // Nanosecond interval per tick
 
 // Function that initializes the game state.
-var InitFunc func(g *Game, svc core.ServiceContext)
+var InitFunc func(g *Game, svc ServiceContext)
 
 // Requests that an entity be created. If Reply is not nil, entity descriptor
 // will be sent back.
 type MsgSpawnEntity struct {
-    Spawn func(uid core.UniqueId) core.Entity
-    Reply chan *core.EntityDesc
+    Spawn func(uid UniqueId) Entity
+    Reply chan *EntityDesc
 }
 
 // Manages game data and runs the main loop.
 type Game struct {
-    svc     core.ServiceContext
-    ents    map[chan core.Msg]core.Entity
-    nextUid core.UniqueId
+    svc     ServiceContext
+    ents    map[chan Msg]Entity
+    nextUid UniqueId
     // This function is used to spawn new players when a client joins. As this
     // service has no concept of any specific entities it must be set by the specific game.
 }
 
-func NewGame(svc core.ServiceContext) *Game {
-    var uid core.UniqueId = 0 // Game uid is always zero
-    ents := make(map[chan core.Msg]core.Entity)
+func NewGame(svc ServiceContext) *Game {
+    var uid UniqueId = 0 // Game uid is always zero
+    ents := make(map[chan Msg]Entity)
     return &Game{svc, ents, uid + 1}
 }
 
-func (g *Game) Run(input chan core.Msg) {
+func (g *Game) Run(input chan Msg) {
     g.waitOnServiceStart(input)
     InitFunc(g, g.svc)
 
     // List of up to date entities
-    updated := make(map[chan core.Msg]bool, len(g.ents))
-    remove_list := []chan core.Msg{}
-    tick_msg := core.MsgTick{input}
+    updated := make(map[chan Msg]bool, len(g.ents))
+    remove_list := []chan Msg{}
+    tick_msg := MsgTick{input}
 
     for {
         tick_start := time.Nanoseconds()
@@ -63,16 +63,16 @@ func (g *Game) Run(input chan core.Msg) {
         for {
             msg := <-input
             switch m := msg.(type) {
-            case core.MsgTick:
+            case MsgTick:
                 updated[m.Origin] = true // bool value doesn't matter
                 if len(updated) == ent_num {
                     // Clear out list, use current number of entities for next tick
-                    updated = make(map[chan core.Msg]bool, len(g.ents))
+                    updated = make(map[chan Msg]bool, len(g.ents))
                     goto update_end
                 }
-            case core.MsgEntityRemoved: // TODO: Counts as imperative here, fix?
+            case MsgEntityRemoved: // TODO: Counts as imperative here, fix?
                 remove_list = append(remove_list, m.Entity.Chan)
-            case core.MsgListEntities:
+            case MsgListEntities:
                 m.Reply <- g.makeEntityList()
             case MsgSpawnEntity:
                 g.spawnEntity(m)
@@ -86,7 +86,7 @@ func (g *Game) Run(input chan core.Msg) {
             g.RemoveEntity(g.ents[ent])
         }
         if len(remove_list) > 0 { // Clear out list if needed
-            remove_list = []chan core.Msg{}
+            remove_list = []chan Msg{}
         }
 
         sleep_ns := (tick_start + skip_ns) - time.Nanoseconds()
@@ -98,31 +98,31 @@ func (g *Game) Run(input chan core.Msg) {
     }
 }
 
-func (g *Game) AddEntity(ent core.Entity) {
+func (g *Game) AddEntity(ent Entity) {
     g.ents[ent.Chan()] = ent
-    msg := core.MsgEntityAdded{core.NewEntityDesc(ent)}
+    msg := MsgEntityAdded{NewEntityDesc(ent)}
     g.svc.PubSub <- pubsub.PublishMsg{"entity", msg}
 }
 
-func (g *Game) RemoveEntity(ent core.Entity) {
+func (g *Game) RemoveEntity(ent Entity) {
     g.ents[ent.Chan()] = nil, false
-    msg := core.MsgEntityRemoved{core.NewEntityDesc(ent)}
+    msg := MsgEntityRemoved{NewEntityDesc(ent)}
     g.svc.PubSub <- pubsub.PublishMsg{"entity", msg}
 }
 
-func (g *Game) makeEntityList() core.MsgListEntities {
-    list := make([]*core.EntityDesc, len(g.ents))
+func (g *Game) makeEntityList() MsgListEntities {
+    list := make([]*EntityDesc, len(g.ents))
 
     i := 0
     for _, ent := range g.ents { // Fill the len(g.ents) slots in list
-        list[i] = core.NewEntityDesc(ent)
+        list[i] = NewEntityDesc(ent)
         i++
     }
-    return core.MsgListEntities{nil, list}
+    return MsgListEntities{nil, list}
 }
 
 // Returns the next available unique id
-func (g *Game) GetUid() core.UniqueId {
+func (g *Game) GetUid() UniqueId {
     uid := g.nextUid
     g.nextUid++
     return uid
@@ -134,7 +134,7 @@ func (g *Game) GetUid() core.UniqueId {
 //
 // TODO: This implementation is prone to error if the same service sends
 // MsgTick more than once, fix?
-func (g *Game) waitOnServiceStart(input chan core.Msg) {
+func (g *Game) waitOnServiceStart(input chan Msg) {
     // We can discard the ok value, because svc is always a struct
     val, _ := (reflect.NewValue(g.svc)).(*reflect.StructValue)
     svc_num := val.NumField() - 1 // Don't count Game
@@ -143,7 +143,7 @@ func (g *Game) waitOnServiceStart(input chan core.Msg) {
     for {
         msg := <-input
         switch m := msg.(type) {
-        case core.MsgTick:
+        case MsgTick:
             num_left--
             if num_left == 0 {
                 goto done
@@ -162,7 +162,7 @@ func (g *Game) spawnEntity(msg MsgSpawnEntity) {
     go p.Run(g.svc)
     if msg.Reply != nil {
         go func() {
-            desc := core.NewEntityDesc(p)
+            desc := NewEntityDesc(p)
             msg.Reply <- desc
         }()
     }

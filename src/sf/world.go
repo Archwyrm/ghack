@@ -10,7 +10,7 @@ import (
     "math"
     "rand"
     "github.com/tm1rbrt/s3dm"
-    "core"
+    .   "core"
     "game"
     "pubsub"
     "sf/cmpId"
@@ -18,8 +18,8 @@ import (
 
 // Signal entity's intent to move from point A to point B
 type MoveMsg struct {
-    Ent *core.EntityDesc // The moving entity
-    Vel *s3dm.V3         // The entity's velocity vector
+    Ent *EntityDesc // The moving entity
+    Vel *s3dm.V3    // The entity's velocity vector
 }
 
 // Translates a 3D vector into a cell position. X and Y values are truncated.
@@ -31,36 +31,36 @@ func hashV3(vec *s3dm.V3) string {
 // into a grid, each of part of the grid is a cell. Currently, only one entity may
 // occupy a cell at any given time.
 type World struct {
-    svc core.ServiceContext
+    svc ServiceContext
     // Entities may be looked up by position with this
-    ents map[string]chan core.Msg
+    ents map[string]chan Msg
     // Entity position (or cells) as 3D vectors may be looked up with this
-    pos map[core.UniqueId]*s3dm.V3
+    pos map[UniqueId]*s3dm.V3
 }
 
-func NewWorld(svc core.ServiceContext) *World {
-    ents := make(map[string]chan core.Msg)
-    pos := make(map[core.UniqueId]*s3dm.V3)
+func NewWorld(svc ServiceContext) *World {
+    ents := make(map[string]chan Msg)
+    pos := make(map[UniqueId]*s3dm.V3)
     return &World{svc, ents, pos}
 }
 
-func (w *World) Run(input chan core.Msg) {
+func (w *World) Run(input chan Msg) {
     // Subscribe to listen for new entities in order to track their position
     w.svc.PubSub <- pubsub.SubscribeMsg{"entity", input}
-    w.svc.Game <- core.MsgTick{input} // Service is ready
+    w.svc.Game <- MsgTick{input} // Service is ready
 
     for {
         msg := <-input
         switch m := msg.(type) {
         case MoveMsg:
             w.moveEnt(m.Ent, m.Vel)
-        case core.MsgEntityAdded:
-            reply := make(chan core.State)
-            m.Entity.Chan <- core.MsgGetState{cmpId.Position, reply}
+        case MsgEntityAdded:
+            reply := make(chan State)
+            m.Entity.Chan <- MsgGetState{cmpId.Position, reply}
             if pos, ok := (<-reply).(Position); ok {
                 w.putInEmptyPos(m.Entity, pos.Position)
             }
-        case core.MsgEntityRemoved:
+        case MsgEntityRemoved:
             pos := w.pos[m.Entity.Uid]
             w.pos[m.Entity.Uid] = nil, false
             w.ents[hashV3(pos)] = nil, false
@@ -70,7 +70,7 @@ func (w *World) Run(input chan core.Msg) {
 
 // Puts the passed entity in an empty position as close to pos as possible.
 // TODO: Current implementation doesn't try very hard at closeness ;)
-func (w *World) putInEmptyPos(ent *core.EntityDesc, pos *s3dm.V3) {
+func (w *World) putInEmptyPos(ent *EntityDesc, pos *s3dm.V3) {
     old_pos := pos.Copy()
     for {
         if _, ok := w.ents[hashV3(pos)]; !ok {
@@ -81,7 +81,7 @@ func (w *World) putInEmptyPos(ent *core.EntityDesc, pos *s3dm.V3) {
     }
     w.setPos(ent, pos, nil)
     if !pos.Equals(old_pos) {
-        ent.Chan <- core.MsgSetState{Position{pos}} // Update with new pos
+        ent.Chan <- MsgSetState{Position{pos}} // Update with new pos
     }
 }
 
@@ -89,7 +89,7 @@ func (w *World) putInEmptyPos(ent *core.EntityDesc, pos *s3dm.V3) {
 // being set is represented by ent. New position is the passed vector new_pos.
 // The old position of old_pos is removed if it exists and is not used when nil
 // is passed.
-func (w *World) setPos(ent *core.EntityDesc, new_pos, old_pos *s3dm.V3) {
+func (w *World) setPos(ent *EntityDesc, new_pos, old_pos *s3dm.V3) {
     if old_pos != nil {
         w.ents[hashV3(old_pos)] = nil, false // Remove old pos
     }
@@ -97,7 +97,7 @@ func (w *World) setPos(ent *core.EntityDesc, new_pos, old_pos *s3dm.V3) {
     w.pos[ent.Uid] = new_pos
 }
 
-func (w *World) moveEnt(ent *core.EntityDesc, vel *s3dm.V3) {
+func (w *World) moveEnt(ent *EntityDesc, vel *s3dm.V3) {
     // Compute new position vector
     old_pos, ok := w.pos[ent.Uid]
     if !ok { // Entity hasn't been added for some reason, bail
@@ -113,15 +113,15 @@ func (w *World) moveEnt(ent *core.EntityDesc, vel *s3dm.V3) {
         // Update position if movement is less than 1, this lets spider move slowly
         if math.Fabs(vel.X) < 1 && math.Fabs(vel.Y) < 1 {
             w.pos[ent.Uid] = new_pos
-            ent.Chan <- core.MsgSetState{Position{new_pos}}
+            ent.Chan <- MsgSetState{Position{new_pos}}
         }
-        ent_ch <- core.MsgRunAction{Attack{ent}, false} // Can't move there, attack instead
+        ent_ch <- MsgRunAction{Attack{ent}, false} // Can't move there, attack instead
         return
     }
     // If not, move the entity to the new pos
     w.setPos(ent, new_pos, old_pos)
     // Update entity position state
-    ent.Chan <- core.MsgSetState{Position{new_pos}}
+    ent.Chan <- MsgSetState{Position{new_pos}}
 
     // Spawn spiders as players move around
     if ent.Id == cmpId.Player {
@@ -155,7 +155,7 @@ func (w *World) spawnSpiders(pos *s3dm.V3) {
 
     // Spawn spiders at a random point in a ring around the player
     // between MIN_DIST and MAX_DIST.
-    reply := make(chan *core.EntityDesc)
+    reply := make(chan *EntityDesc)
     for i := 0; i < count; i++ {
         radius := rand.Float64()*(MAX_DIST-MIN_DIST) + MIN_DIST
         angle := rand.Float64() * 2. * math.Pi
@@ -165,7 +165,7 @@ func (w *World) spawnSpiders(pos *s3dm.V3) {
         go func(X, Y float64) {
             w.svc.Game <- game.MsgSpawnEntity{InitSpider, reply}
             spider := <-reply
-            spider.Chan <- core.MsgSetState{Position{s3dm.NewV3(X, Y, 0.)}}
+            spider.Chan <- MsgSetState{Position{s3dm.NewV3(X, Y, 0.)}}
         }(x, y)
     }
 }

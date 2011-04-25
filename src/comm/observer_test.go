@@ -7,30 +7,30 @@ package comm
 import (
     "testing"
     "time"
-    "core"
+    .   "core"
     "pubsub"
 )
 
-func InitTestEntity(uid core.UniqueId) core.Entity {
-    return core.NewCmpData(uid, 0, "TestEntity")
+func InitTestEntity(uid UniqueId) Entity {
+    return NewCmpData(uid, 0, "TestEntity")
 }
 
 type testState struct {
     Value int
 }
 
-func (x testState) Id() core.StateId { return 0 }
-func (x testState) Name() string     { return "TestState" }
+func (x testState) Id() StateId  { return 0 }
+func (x testState) Name() string { return "TestState" }
 
-var nextUid core.UniqueId = 1
+var nextUid UniqueId = 1
 
 // Test replicating entity data through observers up through the initial sync.
 func TestObserver(t *testing.T) {
-    svc := core.NewServiceContext()
+    svc := NewServiceContext()
     ent := createTestEntity(svc, 1)
     go gameEmulator(t, svc, ent.Chan(), ent)
     go pubsubEmulator(t, svc)
-    client := make(chan core.Msg)
+    client := make(chan Msg)
     obs := createObserver(svc, client)
 
     // Expecting one entity added
@@ -40,8 +40,8 @@ func TestObserver(t *testing.T) {
 
     // Create entity and publish its addition
     ent2 := createTestEntity(svc, 2)
-    desc := core.NewEntityDesc(ent2)
-    add_msg := core.MsgEntityAdded{desc}
+    desc := NewEntityDesc(ent2)
+    add_msg := MsgEntityAdded{desc}
     svc.PubSub <- pubsub.PublishMsg{"entity", add_msg}
 
     // Expecting entity added and one state updated
@@ -49,11 +49,11 @@ func TestObserver(t *testing.T) {
     verifyStateUpdated(t, client, ent2)
 
     // Expecting entity removed
-    rm_msg := core.MsgEntityRemoved{desc}
+    rm_msg := MsgEntityRemoved{desc}
     svc.PubSub <- pubsub.PublishMsg{"entity", rm_msg}
     verifyEntityRemoved(t, client, ent2)
 
-    obs <- core.MsgQuit{}
+    obs <- MsgQuit{}
 }
 
 func TestDuplicateEntity(t *testing.T) {
@@ -65,7 +65,7 @@ func TestRemovingUnaddedEntity(t *testing.T) {
     // (observer should panic)
 }
 
-func verifyEntityAdded(t *testing.T, client chan core.Msg, ent core.Entity) {
+func verifyEntityAdded(t *testing.T, client chan Msg, ent Entity) {
     msg := getMessage(t, client)
     if m, ok := msg.(MsgAddEntity); !ok {
         t.Fatal("No entity added")
@@ -79,7 +79,7 @@ func verifyEntityAdded(t *testing.T, client chan core.Msg, ent core.Entity) {
     }
 }
 
-func verifyEntityRemoved(t *testing.T, client chan core.Msg, ent core.Entity) {
+func verifyEntityRemoved(t *testing.T, client chan Msg, ent Entity) {
     msg := getMessage(t, client)
     if m, ok := msg.(MsgRemoveEntity); !ok {
         t.Fatal("No entity removed")
@@ -93,7 +93,7 @@ func verifyEntityRemoved(t *testing.T, client chan core.Msg, ent core.Entity) {
     }
 }
 
-func verifyStateUpdated(t *testing.T, client chan core.Msg, ent core.Entity) {
+func verifyStateUpdated(t *testing.T, client chan Msg, ent Entity) {
     msg := getMessage(t, client)
     if m, ok := msg.(MsgUpdateState); !ok {
         t.Fatal("No state update received")
@@ -115,7 +115,7 @@ func verifyStateUpdated(t *testing.T, client chan core.Msg, ent core.Entity) {
 }
 
 // Gets a message or times out with an error
-func getMessage(t *testing.T, ch chan core.Msg) core.Msg {
+func getMessage(t *testing.T, ch chan Msg) Msg {
     select {
     case msg := <-ch:
         return msg
@@ -125,7 +125,7 @@ func getMessage(t *testing.T, ch chan core.Msg) core.Msg {
     return nil // Should never be reached
 }
 
-func createTestEntity(svc core.ServiceContext, value int) core.Entity {
+func createTestEntity(svc ServiceContext, value int) Entity {
     ent := InitTestEntity(nextUid)
     nextUid++
     ent.SetState(testState{value})
@@ -134,20 +134,20 @@ func createTestEntity(svc core.ServiceContext, value int) core.Entity {
 }
 
 // Masquerades as a game entity for testing purposes
-func gameEmulator(t *testing.T, svc core.ServiceContext, testCh chan core.Msg,
-testEnt core.Entity) {
-    list, ok := (<-svc.Game).(core.MsgListEntities)
+func gameEmulator(t *testing.T, svc ServiceContext, testCh chan Msg,
+testEnt Entity) {
+    list, ok := (<-svc.Game).(MsgListEntities)
     if !ok {
         t.Fatal("Unexpected message sent to game service")
     }
 
-    desc := []*core.EntityDesc{core.NewEntityDesc(testEnt)}
-    list.Reply <- core.MsgListEntities{nil, desc}
+    desc := []*EntityDesc{NewEntityDesc(testEnt)}
+    list.Reply <- MsgListEntities{nil, desc}
 }
 
 // Masquerades as a pubsub service for testing purposes
-func pubsubEmulator(t *testing.T, svc core.ServiceContext) {
-    var obs chan core.Msg
+func pubsubEmulator(t *testing.T, svc ServiceContext) {
+    var obs chan Msg
     for {
         msg := <-svc.PubSub
         switch m := msg.(type) {
