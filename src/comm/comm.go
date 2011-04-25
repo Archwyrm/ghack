@@ -236,11 +236,7 @@ start:
     // Read length
     length, err := readLength(r)
     if err != nil {
-        if err == os.EOF {
-            goto start // No data was ready, read again
-        } else if err == os.EINVAL {
-            return nil, err // Socket closed mid-read
-        } else if opErr, ok := err.(*net.OpError); ok && opErr.Timeout() {
+        if opErr, ok := err.(*net.OpError); ok && opErr.Timeout() {
             // Socket timed out on read, read again
             goto start
         } else {
